@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Administración — Bajas de Personal</title>
+<style>
+  :root {
+    --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e;
+    --muted: #898781; --border: rgba(11,11,11,0.10); --v: #2a78d6;
+    --ok: #0ca30c; --bad: #d03b3b; --hover-wash: rgba(11,11,11,0.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
+      --muted: #898781; --border: rgba(255,255,255,0.10); --v: #3987e5;
+      --hover-wash: rgba(255,255,255,0.05);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--ink);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 28px 20px 48px; }
+  .eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
+  }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--ink-2); font-size: 13px; margin: 0 0 20px; }
+  .sub a { color: var(--v); }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px; margin-bottom: 14px;
+  }
+  .card h2 { font-size: 15px; margin: 0 0 4px; }
+  .card .hint { font-size: 12.5px; color: var(--muted); margin: 0 0 12px; }
+  label { display: block; font-size: 12px; color: var(--ink-2); margin-bottom: 10px; }
+  input[type=text], input[type=password] {
+    display: block; width: 100%; margin-top: 4px;
+    font: inherit; font-size: 14px; color: var(--ink);
+    background: var(--page); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px;
+  }
+  input:focus-visible, button:focus-visible { outline: 2px solid var(--v); outline-offset: 1px; }
+  .btn {
+    font: inherit; font-size: 13px; font-weight: 600; color: #fff;
+    background: var(--v); border: none; border-radius: 8px;
+    padding: 8px 16px; cursor: pointer;
+  }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.peligro { background: var(--bad); }
+  .btn.chico { font-size: 12px; padding: 5px 10px; font-weight: 500; }
+  .check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--hover-wash); }
+  .tag {
+    display: inline-block; font-size: 11px; font-weight: 600; border-radius: 999px;
+    padding: 1px 8px; background: var(--v); color: #fff;
+  }
+  .aviso { border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-bottom: 14px; }
+  .aviso.ok { background: rgba(12,163,12,0.12); color: var(--ok); }
+  .aviso.error { background: rgba(208,59,59,0.12); color: var(--bad); }
+  .acciones { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .acciones form { display: flex; gap: 6px; align-items: center; margin: 0; }
+  .acciones input { width: 130px; margin: 0; font-size: 12px; padding: 5px 8px; }
+  code {
+    background: var(--hover-wash); border: 1px solid var(--border);
+    border-radius: 6px; padding: 1px 6px; font-size: 12.5px; word-break: break-all;
+  }
+  .volver { font-size: 13px; color: var(--v); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Recursos Humanos · Argentina</div>
+  <h1>Administración</h1>
+  <p class="sub">Sesión de <strong><%= usuario %></strong> · <a class="volver" href="/">← Volver al dashboard</a></p>
+
+  <% if (mensaje) { %><div class="aviso ok"><%= mensaje %></div><% } %>
+  <% if (error) { %><div class="aviso error"><%= error %></div><% } %>
+
+  <div class="card">
+    <h2>Link público</h2>
+    <p class="hint">Compartí este link con el equipo. Cualquiera que lo abra va a tener que iniciar sesión con un usuario creado acá abajo.</p>
+    <code><%= urlPublica %></code>
+  </div>
+
+  <div class="card">
+    <h2>Hoja de datos</h2>
+    <p class="hint">El dashboard lee esta hoja de Google Sheets. Pegá la URL completa o solo el ID. La hoja tiene que estar compartida como “Cualquier persona con el enlace: Lector”.</p>
+    <form method="post" action="/admin/hoja">
+      <label>ID o URL de la hoja
+        <input type="text" name="sheet" value="<%= sheetId %>" required>
+      </label>
+      <button class="btn" type="submit">Guardar hoja</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Usuarios</h2>
+    <p class="hint">Los administradores pueden entrar a esta pantalla; el resto solo ve el dashboard.</p>
+    <table>
+      <thead><tr><th>Usuario</th><th>Rol</th><th>Acciones</th></tr></thead>
+      <tbody>
+        <% usuarios.forEach(function (u) { %>
+        <tr>
+          <td><strong><%= u.usuario %></strong><%= u.usuario === usuario ? ' (vos)' : '' %></td>
+          <td><% if (u.es_admin) { %><span class="tag">Admin</span><% } else { %><span style="color:var(--muted)">Visor</span><% } %></td>
+          <td>
+            <div class="acciones">
+              <form method="post" action="/admin/usuarios/<%= u.id %>/password">
+                <input type="password" name="password" placeholder="Nueva contraseña" required minlength="6">
+                <button class="btn chico" type="submit">Cambiar</button>
+              </form>
+              <% if (u.usuario !== usuario) { %>
+              <form method="post" action="/admin/usuarios/<%= u.id %>/eliminar" onsubmit="return confirm('¿Eliminar a <%= u.usuario %>?')">
+                <button class="btn chico peligro" type="submit">Eliminar</button>
+              </form>
+              <% } %>
+            </div>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Agregar usuario</h2>
+    <form method="post" action="/admin/usuarios">
+      <label>Usuario
+        <input type="text" name="usuario" required autocomplete="off">
+      </label>
+      <label>Contraseña (mínimo 6 caracteres)
+        <input type="password" name="password" required minlength="6" autocomplete="new-password">
+      </label>
+      <label class="check">
+        <input type="checkbox" name="es_admin"> Es administrador (puede gestionar usuarios y la hoja)
+      </label>
+      <button class="btn" type="submit">Crear usuario</button>
+    </form>
+  </div>
+</div>
+</body>
+</html>

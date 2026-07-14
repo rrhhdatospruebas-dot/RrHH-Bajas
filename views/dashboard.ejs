@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bajas de Personal 2026</title>
+<style>
+  :root {
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --v: #2a78d6;   /* serie Voluntaria */
+    --i: #1baf7a;   /* serie Involuntaria */
+    --hover-wash: rgba(11, 11, 11, 0.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --ink: #ffffff;
+      --ink-2: #c3c2b7;
+      --muted: #898781;
+      --grid: #2c2c2a;
+      --baseline: #383835;
+      --border: rgba(255, 255, 255, 0.10);
+      --v: #3987e5;
+      --i: #199e70;
+      --hover-wash: rgba(255, 255, 255, 0.05);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 48px; }
+
+  /* ---------- header ---------- */
+  header .eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
+  }
+  header h1 { font-size: 24px; font-weight: 700; margin: 0 0 4px; text-wrap: balance; }
+  header .sub { color: var(--ink-2); font-size: 13px; margin: 0; }
+  .status {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--muted); margin-top: 8px;
+  }
+  .status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--baseline); flex: none; }
+  .status.live .dot { background: #0ca30c; }
+  .status.off .dot { background: #fab219; }
+
+  /* ---------- filtros ---------- */
+  .filters {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    margin: 20px 0 18px;
+  }
+  .filters label { font-size: 12px; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
+  .filters select {
+    font: inherit; font-size: 13px; color: var(--ink);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 10px; min-width: 130px;
+  }
+  .filters select:focus-visible, .filters button:focus-visible, .search input:focus-visible {
+    outline: 2px solid var(--v); outline-offset: 1px;
+  }
+  .filters button {
+    font: inherit; font-size: 13px; color: var(--ink-2);
+    background: none; border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 12px; cursor: pointer; visibility: hidden;
+  }
+  .filters button.on { visibility: visible; }
+  .filters button:hover { background: var(--hover-wash); }
+
+  /* ---------- KPIs ---------- */
+  .kpis {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px;
+  }
+  @media (max-width: 780px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  .kpi {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 16px;
+  }
+  .kpi .lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .kpi .val { font-size: 30px; font-weight: 700; line-height: 1.15; margin-top: 2px; }
+  .kpi .sub { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+
+  /* ---------- tarjetas / grilla ---------- */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 780px) { .grid { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; min-width: 0;
+  }
+  .card.full { grid-column: 1 / -1; }
+  .card h2 { font-size: 14px; font-weight: 650; margin: 0; }
+  .card .hint { font-size: 12px; color: var(--muted); margin: 1px 0 12px; }
+  .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+
+  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+  .sw.v { background: var(--v); } .sw.i { background: var(--i); }
+
+  /* ---------- chart mensual ---------- */
+  .chart-mes svg { display: block; width: 100%; height: auto; }
+  .chart-mes text { font-family: inherit; }
+
+  /* ---------- barras horizontales ---------- */
+  .hbars { display: flex; flex-direction: column; gap: 7px; }
+  .hrow {
+    display: grid; grid-template-columns: 138px 1fr 32px;
+    align-items: center; gap: 8px; border-radius: 6px; padding: 2px 4px;
+  }
+  .hrow:hover { background: var(--hover-wash); }
+  .hrow .hl { font-size: 12.5px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hrow .track { height: 14px; display: flex; align-items: center; min-width: 0; }
+  .hrow .bar { height: 14px; border-radius: 2px 4px 4px 2px; min-width: 2px; }
+  .hrow .hv { font-size: 12.5px; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* ---------- género ---------- */
+  .propbar { display: flex; height: 22px; border-radius: 6px; overflow: hidden; gap: 2px; margin-bottom: 10px; }
+  .propbar div { min-width: 3px; }
+  .prop-legend { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--ink-2); }
+  .prop-legend .row { display: flex; align-items: center; gap: 8px; }
+  .prop-legend b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  /* ---------- tabla ---------- */
+  .search { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .search input {
+    font: inherit; font-size: 13px; color: var(--ink);
+    background: var(--page); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 10px; width: 260px; max-width: 100%;
+  }
+  .search .count { font-size: 12px; color: var(--muted); }
+  .tblwrap { overflow: auto; max-height: 420px; border: 1px solid var(--border); border-radius: 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+  thead th {
+    position: sticky; top: 0; background: var(--surface); z-index: 1;
+    text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+    text-transform: uppercase; color: var(--muted);
+    padding: 8px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap;
+  }
+  tbody td { padding: 7px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; color: var(--ink-2); }
+  tbody td:first-child { color: var(--ink); font-weight: 500; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--hover-wash); }
+  td.num { font-variant-numeric: tabular-nums; }
+  .pill {
+    display: inline-block; font-size: 11px; font-weight: 600;
+    padding: 1px 8px; border-radius: 99px; color: var(--ink);
+  }
+  .pill.V { background: color-mix(in srgb, var(--v) 18%, transparent); }
+  .pill.I { background: color-mix(in srgb, var(--i) 22%, transparent); }
+  .empty { padding: 24px; text-align: center; color: var(--muted); }
+
+  /* ---------- tooltip ---------- */
+  #tip {
+    position: fixed; pointer-events: none; z-index: 10; display: none;
+    background: var(--ink); color: var(--page);
+    font-size: 12px; line-height: 1.5; padding: 7px 10px; border-radius: 8px;
+    max-width: 260px; box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  }
+  #tip b { font-variant-numeric: tabular-nums; }
+
+  footer { margin-top: 20px; font-size: 12px; color: var(--muted); line-height: 1.6; }
+  footer a { color: var(--ink-2); }
+
+  /* ---------- barra de sesión ---------- */
+  .sesion {
+    display: flex; align-items: center; gap: 12px; justify-content: flex-end;
+    font-size: 12.5px; color: var(--muted); margin-bottom: 10px;
+  }
+  .sesion a { color: var(--v); text-decoration: none; }
+  .sesion a:hover { text-decoration: underline; }
+  .sesion form { margin: 0; }
+  .sesion button {
+    font: inherit; font-size: 12.5px; color: var(--ink-2);
+    background: none; border: 1px solid var(--border); border-radius: 8px;
+    padding: 4px 10px; cursor: pointer;
+  }
+  .sesion button:hover { background: var(--hover-wash); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hrow .bar { transition: width 0.25s ease; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="sesion">
+    <span>Sesión de <strong><%= usuario %></strong></span>
+    <% if (esAdmin) { %><a href="/admin">Administración</a><% } %>
+    <form method="post" action="/logout"><button type="submit">Cerrar sesión</button></form>
+  </div>
+  <header>
+    <div class="eyebrow">Recursos Humanos · Argentina</div>
+    <h1>Bajas de personal — <span id="periodo">…</span></h1>
+    <p class="sub">Desvinculaciones registradas por mes, motivo, sitio y dirección. Fuente: planilla de RRHH (Google Sheets).</p>
+    <div class="status" id="status"><span class="dot"></span><span id="status-txt">Cargando datos del Sheet…</span></div>
+  </header>
+
+  <div class="filters" role="group" aria-label="Filtros">
+    <label>Mes
+      <select id="f-mes"><option value="">Todos</option></select>
+    </label>
+    <label>Tipo
+      <select id="f-tipo">
+        <option value="">Todos</option>
+        <option value="V">Voluntaria</option>
+        <option value="I">Involuntaria</option>
+      </select>
+    </label>
+    <label>Sitio
+      <select id="f-sitio"><option value="">Todos</option></select>
+    </label>
+    <button id="f-clear" type="button">Limpiar filtros</button>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="lbl">Total bajas</div><div class="val" id="k-total">–</div><div class="sub" id="k-total-sub"></div></div>
+    <div class="kpi"><div class="lbl">Voluntarias</div><div class="val" id="k-vol">–</div><div class="sub" id="k-vol-sub"></div></div>
+    <div class="kpi"><div class="lbl">Involuntarias</div><div class="val" id="k-inv">–</div><div class="sub" id="k-inv-sub"></div></div>
+    <div class="kpi"><div class="lbl">Mes pico</div><div class="val" id="k-pico">–</div><div class="sub" id="k-pico-sub"></div></div>
+  </div>
+
+  <div class="grid">
+    <div class="card full">
+      <div class="card-head">
+        <div><h2>Bajas por mes</h2><div class="hint">Apiladas por tipo de baja</div></div>
+        <div class="legend">
+          <span><span class="sw v"></span>Voluntaria</span>
+          <span><span class="sw i"></span>Involuntaria</span>
+        </div>
+      </div>
+      <div class="chart-mes" id="c-mes"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div><h2>Por motivo</h2><div class="hint">Color según tipo de baja</div></div>
+      </div>
+      <div class="hbars" id="c-motivo"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div><h2>Por sitio</h2><div class="hint">Planta / división de personal</div></div>
+      </div>
+      <div class="hbars" id="c-sitio"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div><h2>Por dirección</h2><div class="hint">Estructura organizativa</div></div>
+      </div>
+      <div class="hbars" id="c-dir"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div><h2>Género</h2><div class="hint">Distribución de las bajas</div></div>
+      </div>
+      <div class="propbar" id="c-gen-bar"></div>
+      <div class="prop-legend" id="c-gen-leg"></div>
+    </div>
+
+    <div class="card full">
+      <div class="card-head"><div><h2>Detalle de bajas</h2><div class="hint">Todos los registros del período filtrado</div></div></div>
+      <div class="search">
+        <input id="q" type="search" placeholder="Buscar por nombre, sitio, gerencia…" aria-label="Buscar en la tabla">
+        <span class="count" id="tcount"></span>
+      </div>
+      <div class="tblwrap">
+        <table>
+          <thead><tr>
+            <th>Empleado</th><th>Fecha</th><th>Tipo</th><th>Motivo</th>
+            <th>Sitio</th><th>Dirección</th><th>Gerencia</th><th>BP</th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div class="empty" id="tempty" hidden>Sin resultados con los filtros actuales.</div>
+      </div>
+    </div>
+  </div>
+
+  <footer id="foot"></footer>
+</div>
+
+<div id="tip" role="tooltip"></div>
+
+<script>
+/* ================= configuración ================= */
+/* El ID de la hoja lo inyecta el servidor desde la base de datos (se cambia en /admin) */
+const SHEET_ID = '<%= sheetId %>';
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
+
+/* copia de respaldo (última descarga) por si no hay conexión al Sheet */
+const SNAPSHOT = [{"n":"RIOS, MIGUEL ANGEL","g":"M","t":"V","m":"Mutuo acuerdo","s":"Pta. Puesto Viejo","f":"2026-01-27","mes":1,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta puesto viejo","bp":"MARTIN, CARLOS ALBERTO"},{"n":"MERCADO, DAMIAN SEGUNDO","g":"M","t":"V","m":"Jubilación","s":"Pta. Capdeville","f":"2026-01-17","mes":1,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta capdeville","bp":"DEVITA, ANALIA LOURDES"},{"n":"GONZALEZ, GEORGINA GISELA","g":"F","t":"V","m":"Renuncia","s":"Adm. Central MG","f":"2026-01-02","mes":1,"dir":"Dirección Comercial","ger":"Sin dato","bp":"Sin dato"},{"n":"PEREZ, JOSE OSVALDO","g":"M","t":"I","m":"Despido con causa","s":"Adm. Central MG","f":"2026-01-27","mes":1,"dir":"Dirección General","ger":"Gcia. supply chain","bp":"PUJOL REIG, VIRGINIA"},{"n":"LESLIE, MILAGROS","g":"F","t":"V","m":"Renuncia","s":"Adm. Central MG","f":"2026-01-01","mes":1,"dir":"Dirección General","ger":"Gcia. de negocio disensa","bp":"PUJOL REIG, VIRGINIA"},{"n":"PANTOJA, ERICO JULIAN","g":"M","t":"I","m":"Despido sin causa","s":"Pta. Puesto Viejo","f":"2026-01-27","mes":1,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta puesto viejo","bp":"MARTIN, CARLOS ALBERTO"},{"n":"DIAZ, JOAQUINA GUADALUPE","g":"F","t":"V","m":"Renuncia","s":"Pta. Campana","f":"2026-01-14","mes":1,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta campana","bp":"DAMONTE, IGNACIO FABIAN"},{"n":"ROCHA, CINTIA JOHANNA","g":"F","t":"V","m":"Fin de contrato","s":"Pta. Campana","f":"2026-01-16","mes":1,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta campana","bp":"DAMONTE, IGNACIO FABIAN"},{"n":"FLEIDERMAN, CLARA BELEN","g":"F","t":"V","m":"Renuncia","s":"Adm. Central MG","f":"2026-01-24","mes":1,"dir":"Sin dato","ger":"Sin dato","bp":"PUJOL REIG, VIRGINIA"},{"n":"ECHAVARRIA, MARIA CANDELARIA","g":"F","t":"V","m":"Renuncia","s":"Adm. Central MG","f":"2026-01-17","mes":1,"dir":"Dirección General","ger":"Gcia. supply chain","bp":"PUJOL REIG, VIRGINIA"},{"n":"SIBILLA GAIO, MARIA EMILIA","g":"F","t":"V","m":"Renuncia","s":"Adm. Central MG","f":"2026-01-24","mes":1,"dir":"Dirección de Administración y Finanzas","ger":"Gcia. de administración y finanzas","bp":"PUJOL REIG, VIRGINIA"},{"n":"CORNEJO, GONZALO MATIAS","g":"M","t":"V","m":"Renuncia","s":"Pta. Córdoba Norte","f":"2026-01-28","mes":1,"dir":"Dirección General","ger":"Gcia. nacional armx","bp":"FRIAS, CECILIA"},{"n":"CORREDERA, FLORENCIA BELEN","g":"F","t":"V","m":"Renuncia","s":"Pta. Córdoba Norte","f":"2026-01-01","mes":1,"dir":"Dirección General","ger":"Gcia. nacional armx","bp":"FRIAS, CECILIA"},{"n":"BUTELER, MARIA EUGENIA","g":"F","t":"I","m":"Despido sin causa","s":"Adm. Central MG","f":"2026-02-10","mes":2,"dir":"Sin dato","ger":"Sin dato","bp":"PUJOL REIG, VIRGINIA"},{"n":"RAVIOLO, MARIA MARTA","g":"F","t":"I","m":"Despido sin causa","s":"Adm. Central MG","f":"2026-02-10","mes":2,"dir":"Sin dato","ger":"Sin dato","bp":"PUJOL REIG, VIRGINIA"},{"n":"ITURRIA, DANIEL EDUARDO","g":"M","t":"V","m":"Renuncia","s":"Añacua","f":"2026-02-10","mes":2,"dir":"Dirección General","ger":"Gcia. nacional armx","bp":"FRIAS, CECILIA"},{"n":"PEDERNERA, BELEN","g":"F","t":"V","m":"Renuncia","s":"Pta. Capdeville","f":"2026-02-24","mes":2,"dir":"Dirección Comercial","ger":"Sin dato","bp":"Sin dato"},{"n":"SUAREZ, PAULA","g":"F","t":"V","m":"Renuncia","s":"Adm. Central MG","f":"2026-02-09","mes":2,"dir":"Dirección Comercial","ger":"Sin dato","bp":"Sin dato"},{"n":"FELDMANN, SANTIAGO ANDRES","g":"M","t":"I","m":"Despido sin causa","s":"Adm. Central MG","f":"2026-02-11","mes":2,"dir":"Dirección General","ger":"Gcia. de negocio disensa","bp":"PUJOL REIG, VIRGINIA"},{"n":"GONZALEZ, MANUEL","g":"M","t":"V","m":"Renuncia","s":"Adm. Central MG","f":"2026-02-24","mes":2,"dir":"Dirección General","ger":"Gcia. de roofing y morteros","bp":"DIMOV, JULIO LUCAS"},{"n":"CUELLO, LUIS ANIBAL","g":"M","t":"V","m":"Renuncia","s":"Pta. Córdoba Norte","f":"2026-02-12","mes":2,"dir":"Dirección General","ger":"Gcia. nacional armx","bp":"FRIAS, CECILIA"},{"n":"ROJA, JULIO CESAR","g":"M","t":"I","m":"Despido sin causa","s":"Pta. Campana","f":"2026-03-13","mes":3,"dir":"Dirección General","ger":"Gcia. supply chain","bp":"DAMONTE, IGNACIO FABIAN"},{"n":"BURGOS, EVANGELINA ELENA","g":"F","t":"I","m":"Despido sin causa","s":"Pta. Puesto Viejo","f":"2026-03-07","mes":3,"dir":"Dirección General","ger":"Gcia. supply chain","bp":"MARTIN, CARLOS ALBERTO"},{"n":"LEON CEJAS, CLAUDIO FEDERICO","g":"M","t":"I","m":"Despido sin causa","s":"Pta. Puesto Viejo","f":"2026-03-07","mes":3,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta puesto viejo","bp":"MARTIN, CARLOS ALBERTO"},{"n":"MARINO, DAVID SEBASTIAN","g":"M","t":"V","m":"Renuncia","s":"Adm. Central MG","f":"2026-03-01","mes":3,"dir":"Dirección de Recursos Humanos","ger":"Gcia. de recursos humanos","bp":"PUJOL REIG, VIRGINIA"},{"n":"PEREZ GUILLEN, CESAR EDUARDO","g":"M","t":"I","m":"Despido sin causa","s":"Pta. Campana","f":"2026-03-13","mes":3,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta campana","bp":"DAMONTE, IGNACIO FABIAN"},{"n":"YAMIN, NICOLAS NOE","g":"M","t":"V","m":"Renuncia","s":"Pta. Capdeville","f":"2026-03-07","mes":3,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta capdeville","bp":"DEVITA, ANALIA LOURDES"},{"n":"GRAÑA, LUCIANA INES","g":"F","t":"I","m":"Despido sin causa","s":"Pta. Malagueño","f":"2026-03-06","mes":3,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta malagueño","bp":"DIMOV, JULIO LUCAS"},{"n":"GALINDEZ, MARIA CANDELARIA","g":"F","t":"V","m":"Renuncia","s":"Adm. Central MG","f":"2026-03-07","mes":3,"dir":"Dirección Comercial","ger":"Sin dato","bp":"Sin dato"},{"n":"LARIO BUSTOS, AXEL ADRIEL","g":"M","t":"V","m":"Renuncia","s":"Pta. Yocsina","f":"2026-03-04","mes":3,"dir":"Dirección General","ger":"Gcia. de afr","bp":"DIMOV, JULIO LUCAS"},{"n":"BALZARELLI, JOSEFINA","g":"F","t":"V","m":"Renuncia","s":"Pta. Capdeville","f":"2026-03-01","mes":3,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta capdeville","bp":"DEVITA, ANALIA LOURDES"},{"n":"GALBAN, RICARDO ISRAEL JONATHAN","g":"M","t":"I","m":"Despido con causa","s":"Pta. Campana","f":"2026-04-11","mes":4,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta campana","bp":"DAMONTE, IGNACIO FABIAN"},{"n":"VILLARROEL, RAMON ANTONIO","g":"M","t":"V","m":"Mutuo acuerdo","s":"Pta. Malagueño","f":"2026-04-17","mes":4,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta malagueño","bp":"DIMOV, JULIO LUCAS"},{"n":"MANSILLA, PABLO CESAR","g":"M","t":"I","m":"Despido sin causa","s":"Pta. Campana","f":"2026-04-15","mes":4,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta campana","bp":"DAMONTE, IGNACIO FABIAN"},{"n":"ASCUA, MELINA BELEN","g":"F","t":"V","m":"Renuncia","s":"Adm. Central MG","f":"2026-04-24","mes":4,"dir":"Dirección Comercial","ger":"Sin dato","bp":"Sin dato"},{"n":"FRANCO, LUIS DARIO","g":"M","t":"I","m":"Despido sin causa","s":"Pta. Capdeville","f":"2026-04-18","mes":4,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta capdeville","bp":"DEVITA, ANALIA LOURDES"},{"n":"ALMIRON, WILFREDO LUIS","g":"M","t":"V","m":"Renuncia","s":"Añacua","f":"2026-04-07","mes":4,"dir":"Dirección General","ger":"Gcia. nacional armx","bp":"FRIAS, CECILIA"},{"n":"MESIAS, FACUNDO JAVIER","g":"M","t":"V","m":"Renuncia","s":"Pta. Campana","f":"2026-04-03","mes":4,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta campana","bp":"DAMONTE, IGNACIO FABIAN"},{"n":"D AGOSTINO, CECILIA ANDREA","g":"F","t":"V","m":"Renuncia","s":"Adm. Central MG","f":"2026-04-07","mes":4,"dir":"Dirección de Recursos Humanos","ger":"Gcia. de recursos humanos","bp":"PUJOL REIG, VIRGINIA"},{"n":"CABELLO, FEDERICO","g":"M","t":"V","m":"Renuncia","s":"Pta. Malagueño","f":"2026-04-11","mes":4,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta malagueño","bp":"DIMOV, JULIO LUCAS"},{"n":"LIZZI, JUAN GABRIEL","g":"M","t":"V","m":"Renuncia","s":"Pta. Capdeville","f":"2026-04-15","mes":4,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta capdeville","bp":"DEVITA, ANALIA LOURDES"},{"n":"DIAZ, ELIAS DANIEL","g":"M","t":"V","m":"Mutuo acuerdo","s":"Pta. Malagueño","f":"2026-05-09","mes":5,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta malagueño","bp":"DIMOV, JULIO LUCAS"},{"n":"CONDORI, FRANCISCO MAURO","g":"M","t":"V","m":"Mutuo acuerdo","s":"Pta. Puesto Viejo","f":"2026-05-19","mes":5,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta puesto viejo","bp":"MARTIN, CARLOS ALBERTO"},{"n":"ANTECAO, CARLOS RAMON","g":"M","t":"V","m":"Mutuo acuerdo","s":"Pta. Puesto Viejo","f":"2026-05-09","mes":5,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta puesto viejo","bp":"MARTIN, CARLOS ALBERTO"},{"n":"CRUZ, MARCELO DANIEL","g":"M","t":"V","m":"Mutuo acuerdo","s":"Pta. Puesto Viejo","f":"2026-05-09","mes":5,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta puesto viejo","bp":"MARTIN, CARLOS ALBERTO"},{"n":"VIDELA, CLAUDIO RUBEN","g":"M","t":"V","m":"Renuncia","s":"Pta. Córdoba Norte","f":"2026-05-01","mes":5,"dir":"Dirección General","ger":"Gcia. nacional armx","bp":"FRIAS, CECILIA"},{"n":"BERRONDO LION, VALERIA ELISA","g":"F","t":"V","m":"Renuncia","s":"Adm. Central MG","f":"2026-05-16","mes":5,"dir":"Sin dato","ger":"Sin dato","bp":"PUJOL REIG, VIRGINIA"},{"n":"VIJARRA, MARIA DE LOS ANGELES","g":"F","t":"V","m":"Renuncia","s":"Adm. Central MG","f":"2026-05-16","mes":5,"dir":"Dirección de Administración y Finanzas","ger":"Gcia. de administración y finanzas","bp":"PUJOL REIG, VIRGINIA"},{"n":"TERUEL, EZEQUIEL MARTIN","g":"M","t":"V","m":"Renuncia","s":"Adm. Bs. As.","f":"2026-05-23","mes":5,"dir":"Dirección Comercial","ger":"Sin dato","bp":"Sin dato"},{"n":"KEMNITZ, GERARDO ENRIQUE","g":"M","t":"V","m":"Mutuo acuerdo","s":"Pta. Malagueño","f":"2026-05-01","mes":5,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta malagueño","bp":"DIMOV, JULIO LUCAS"},{"n":"ROSALES, HUGO ALBERTO","g":"M","t":"V","m":"Renuncia","s":"Pta. Córdoba Norte","f":"2026-05-01","mes":5,"dir":"Dirección General","ger":"Gcia. nacional armx","bp":"FRIAS, CECILIA"},{"n":"ROSSETTI, AGUSTIN","g":"M","t":"V","m":"Renuncia","s":"Pta. Malagueño","f":"2026-05-04","mes":5,"dir":"Dirección Comercial","ger":"Sin dato","bp":"Sin dato"},{"n":"SORDO, MAXIMILIANO JOSE","g":"M","t":"V","m":"Renuncia","s":"Pta. Córdoba Norte","f":"2026-05-01","mes":5,"dir":"Dirección General","ger":"Gcia. nacional armx","bp":"FRIAS, CECILIA"},{"n":"ZORZOLI, JULIO CESAR","g":"M","t":"V","m":"Renuncia","s":"Pta. Córdoba Norte","f":"2026-05-01","mes":5,"dir":"Dirección General","ger":"Gcia. nacional armx","bp":"FRIAS, CECILIA"},{"n":"ACUÑA, GUSTAVO LORENZO","g":"M","t":"V","m":"Renuncia","s":"Añacua","f":"2026-05-07","mes":5,"dir":"Dirección General","ger":"Gcia. nacional armx","bp":"FRIAS, CECILIA"},{"n":"FRANCIONI, LUCIA","g":"F","t":"V","m":"Renuncia","s":"Adm. Central MG","f":"2026-05-23","mes":5,"dir":"Dirección General","ger":"Gcia. de negocio disensa","bp":"PUJOL REIG, VIRGINIA"},{"n":"ASNAL, JULIO PABLO","g":"M","t":"V","m":"Mutuo acuerdo","s":"Adm. Central MG","f":"2026-05-30","mes":5,"dir":"Dirección Comercial","ger":"Sin dato","bp":"Sin dato"},{"n":"CUFRE, VALERIA","g":"F","t":"I","m":"Despido sin causa","s":"Pta. Malagueño","f":"2026-05-16","mes":5,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta malagueño","bp":"DIMOV, JULIO LUCAS"},{"n":"MORANO, MIGUEL","g":"M","t":"V","m":"Renuncia","s":"Pta. Puesto Viejo","f":"2026-05-02","mes":5,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta puesto viejo","bp":"MARTIN, CARLOS ALBERTO"},{"n":"ROMERO, HUGO GERMAIN","g":"M","t":"V","m":"Renuncia","s":"Pta. Puesto Viejo","f":"2026-05-01","mes":5,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta puesto viejo","bp":"MARTIN, CARLOS ALBERTO"},{"n":"ARIAS MARTIN, NICOLAS ALEJANDRO","g":"M","t":"V","m":"Renuncia","s":"Pta. Malagueño","f":"2026-05-01","mes":5,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta malagueño","bp":"DIMOV, JULIO LUCAS"},{"n":"COLUCCI, MICAELA AGOSTINA","g":"F","t":"V","m":"Renuncia","s":"Pta. Córdoba Norte","f":"2026-05-01","mes":5,"dir":"Dirección General","ger":"Gcia. nacional armx","bp":"FRIAS, CECILIA"},{"n":"MONGE, DIEGO HERNAN","g":"M","t":"V","m":"Renuncia","s":"Pta. Córdoba Norte","f":"2026-05-01","mes":5,"dir":"Dirección General","ger":"Gcia. nacional armx","bp":"FRIAS, CECILIA"},{"n":"BASUALDO, GUSTAVO SANTOS","g":"M","t":"V","m":"Renuncia","s":"Pta. Córdoba Norte","f":"2026-05-01","mes":5,"dir":"Dirección General","ger":"Gcia. nacional armx","bp":"FRIAS, CECILIA"},{"n":"AGUERO, RAUL DANIEL","g":"M","t":"V","m":"Renuncia","s":"Pta. Capdeville","f":"2026-06-02","mes":6,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta capdeville","bp":"DEVITA, ANALIA LOURDES"},{"n":"PERALES SUAREZ, JOSE LUIS","g":"M","t":"V","m":"Renuncia","s":"Pta. Malagueño","f":"2026-06-05","mes":6,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta malagueño","bp":"DIMOV, JULIO LUCAS"},{"n":"PIZA, WALTER RAMON","g":"M","t":"V","m":"Mutuo acuerdo","s":"Pta. Puesto Viejo","f":"2026-06-01","mes":6,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta puesto viejo","bp":"MARTIN, CARLOS ALBERTO"},{"n":"DELLA VEDOVA, GIULIANA AYLEN","g":"F","t":"I","m":"Fin de contrato","s":"Pta. Malagueño","f":"2026-06-08","mes":6,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta malagueño","bp":"DIMOV, JULIO LUCAS"},{"n":"MERCADO, MATIAS LUIS EZEQUIEL","g":"M","t":"V","m":"Mutuo acuerdo","s":"Pta. Córdoba Norte","f":"2026-06-20","mes":6,"dir":"Dirección General","ger":"Gcia. nacional armx","bp":"FRIAS, CECILIA"},{"n":"REALE LATINI, LUCAS AGUSTIN","g":"M","t":"V","m":"Renuncia","s":"Pta. Puesto Viejo","f":"2026-06-30","mes":6,"dir":"Dirección de Operaciones Cemento","ger":"Gcia. planta puesto viejo","bp":"MARTIN, CARLOS ALBERTO"}];
+const SNAPSHOT_FECHA = '13/07/2026';
+
+/* ================= limpieza de datos ================= */
+const MOTIVO_MAP = {
+  'Voluntary: Resignation':            ['V', 'Renuncia'],
+  'Voluntary: Individual Mutual S':    ['V', 'Mutuo acuerdo'],
+  'Voluntary: Retirement':             ['V', 'Jubilación'],
+  'Voluntary: End of contract':        ['V', 'Fin de contrato'],
+  'Involuntary: Dismissal with Ca':    ['I', 'Despido con causa'],
+  'Involuntary: Dismissal without':    ['I', 'Despido sin causa'],
+  'Involuntary: End of contract':      ['I', 'Fin de contrato'],
+};
+const SITE_MAP = {
+  'JMCE-PTA. PUESTO VIEJO': 'Pta. Puesto Viejo',
+  'JMCE-PTA. CAPDEVILLE':   'Pta. Capdeville',
+  'JMCE-PTA. CAMPANA':      'Pta. Campana',
+  'JMCE-PTA. MALAGUEÑO':    'Pta. Malagueño',
+  'JMCE-ADM. CENTRAL MG':   'Adm. Central MG',
+  'JMCE-ADM. BS.AS.':       'Adm. Bs. As.',
+  'JMHO-PTA. CÓRDOBA NORTE':'Pta. Córdoba Norte',
+  'JMHO- AÑACUA':           'Añacua',
+  'ECAF-PTA. YOCSINA':      'Pta. Yocsina',
+};
+
+function parseCSV(text) {
+  const rows = []; let row = [], cur = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else inQ = false; }
+      else cur += c;
+    } else {
+      if (c === '"') inQ = true;
+      else if (c === ',') { row.push(cur); cur = ''; }
+      else if (c === '\n') { row.push(cur.replace(/\r$/, '')); rows.push(row); row = []; cur = ''; }
+      else cur += c;
+    }
+  }
+  if (cur.length || row.length) { row.push(cur.replace(/\r$/, '')); rows.push(row); }
+  return rows;
+}
+
+function titleDir(d) {
+  d = (d || '').trim();
+  if (!d || !d.toUpperCase().includes('DIRECCI')) return 'Sin dato';
+  return d.replace('DIRECCION', 'DIRECCIÓN').toLowerCase()
+    .split(' ').map((w, i) => i === 0 ? 'Dirección' : (w === 'de' || w === 'y') ? w : w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ').replace(/Administracion/g, 'Administración');
+}
+
+function toRecords(csvText) {
+  const rows = parseCSV(csvText);
+  const out = [];
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (r.length < 13 || !r[0]) continue;
+    const [cod, nombre, genero, motivoRaw, ceco, div, fecha, mesTxt, dir, director, ger, gerente, bp] = r;
+    const mm = MOTIVO_MAP[motivoRaw.trim()];
+    if (!mm || !fecha.includes('/')) continue;
+    const [m, d, y] = fecha.split('/').map(Number);
+    const gerT = (ger || '').trim();
+    out.push({
+      n: nombre, g: genero === 'Masculino' ? 'M' : 'F',
+      t: mm[0], m: mm[1],
+      s: SITE_MAP[div.trim()] || div.trim(),
+      f: `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`,
+      dir: titleDir(dir),
+      ger: gerT ? (gerT.charAt(0) + gerT.slice(1).toLowerCase()).replace(/gerencia/i, 'Gcia.') : 'Sin dato',
+      bp: (bp || '').trim() || 'Sin dato'
+    });
+  }
+  return out;
+}
+
+/* ================= estado ================= */
+const MES_ABR = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const MES_NOM = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+let DATA = [];
+let MESES = [];       // claves "AAAA-MM" ordenadas
+let multiYear = false;
+const state = { mes: '', tipo: '', sitio: '', q: '' };
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+const pct = (n, d) => d ? Math.round(n / d * 100) + '%' : '–';
+const kMes = r => r.f.slice(0, 7);
+const mesNom = k => MES_NOM[+k.slice(5, 7)] + (multiYear ? ' ' + k.slice(0, 4) : '');
+const mesAbr = k => MES_ABR[+k.slice(5, 7)] + (multiYear ? '’' + k.slice(2, 4) : '');
+
+function periodoLabel() {
+  if (!MESES.length) return 'sin datos';
+  const a = MESES[0], b = MESES[MESES.length - 1];
+  if (a === b) return `${MES_NOM[+a.slice(5, 7)]} ${a.slice(0, 4)}`;
+  if (a.slice(0, 4) === b.slice(0, 4))
+    return `${MES_NOM[+a.slice(5, 7)]} a ${MES_NOM[+b.slice(5, 7)]} ${a.slice(0, 4)}`;
+  return `${MES_NOM[+a.slice(5, 7)]} ${a.slice(0, 4)} a ${MES_NOM[+b.slice(5, 7)]} ${b.slice(0, 4)}`;
+}
+
+/* ================= carga de datos ================= */
+function setData(records, fuente) {
+  DATA = records;
+  MESES = [...new Set(DATA.map(kMes))].sort();
+  multiYear = new Set(MESES.map(k => k.slice(0, 4))).size > 1;
+
+  $('periodo').textContent = periodoLabel();
+  document.title = `Bajas de Personal — ${periodoLabel()}`;
+
+  const selMes = $('f-mes'), selSitio = $('f-sitio');
+  selMes.innerHTML = '<option value="">Todos</option>' +
+    MESES.map(k => `<option value="${k}">${mesNom(k)}</option>`).join('');
+  selSitio.innerHTML = '<option value="">Todos</option>' +
+    [...new Set(DATA.map(r => r.s))].sort((a, b) => a.localeCompare(b, 'es'))
+      .map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  state.mes = state.sitio = '';
+
+  const st = $('status');
+  st.classList.remove('live', 'off');
+  if (fuente === 'live') {
+    st.classList.add('live');
+    $('status-txt').textContent = `Datos en vivo del Google Sheet · leídos el ${new Date().toLocaleDateString('es-AR')} a las ${new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`;
+  } else {
+    st.classList.add('off');
+    $('status-txt').textContent = `Sin conexión al Sheet — mostrando copia guardada del ${SNAPSHOT_FECHA}`;
+  }
+
+  const sinDir = DATA.filter(r => r.dir === 'Sin dato').length;
+  $('foot').textContent =
+    `Elaborado a partir de la planilla de bajas (${DATA.length} registros, ${periodoLabel().toLowerCase()}). ` +
+    `Los datos se leen del Google Sheet cada vez que se abre o recarga esta página.` +
+    (sinDir ? ` Nota de calidad de datos: ${sinDir} registro${sinDir === 1 ? ' tiene' : 's tienen'} la columna DIRECCION vacía o mal cargada en la planilla y figura${sinDir === 1 ? '' : 'n'} como “Sin dato”.` : '');
+
+  render();
+}
+
+function init() {
+  fetch(CSV_URL, { cache: 'no-store' })
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+    .then(txt => {
+      const recs = toRecords(txt);
+      if (!recs.length) throw new Error('sin registros');
+      setData(recs, 'live');
+    })
+    .catch(() => setData(SNAPSHOT, 'snapshot'));
+}
+
+/* ================= arranque =================
+   El acceso ahora lo controla el servidor (login con sesión);
+   si llegamos acá es porque el usuario ya está autenticado. */
+init();
+
+/* ================= filtros ================= */
+['f-mes', 'f-tipo', 'f-sitio'].forEach(id => $(id).addEventListener('change', () => {
+  state.mes = $('f-mes').value; state.tipo = $('f-tipo').value; state.sitio = $('f-sitio').value;
+  render();
+}));
+$('f-clear').addEventListener('click', () => {
+  state.mes = state.tipo = state.sitio = '';
+  $('f-mes').value = $('f-tipo').value = $('f-sitio').value = '';
+  render();
+});
+$('q').addEventListener('input', e => { state.q = e.target.value.trim().toLowerCase(); renderTable(filtered()); });
+
+function filtered() {
+  return DATA.filter(r =>
+    (!state.mes || kMes(r) === state.mes) &&
+    (!state.tipo || r.t === state.tipo) &&
+    (!state.sitio || r.s === state.sitio));
+}
+
+function countBy(arr, key) {
+  const m = new Map();
+  arr.forEach(r => { const k = key(r); m.set(k, (m.get(k) || 0) + 1); });
+  return m;
+}
+
+/* ================= KPIs ================= */
+function renderKPIs(rows) {
+  const total = rows.length;
+  const v = rows.filter(r => r.t === 'V').length;
+  const i = total - v;
+  $('k-total').textContent = total;
+  $('k-total-sub').textContent = total === DATA.length ? periodoLabel() : `de ${DATA.length} en el período`;
+  $('k-vol').textContent = v;
+  $('k-vol-sub').textContent = pct(v, total) + ' del total';
+  $('k-inv').textContent = i;
+  $('k-inv-sub').textContent = pct(i, total) + ' del total';
+  const porMes = countBy(rows, kMes);
+  let pico = null;
+  porMes.forEach((n, m) => { if (!pico || n > pico[1]) pico = [m, n]; });
+  $('k-pico').textContent = pico ? mesNom(pico[0]) : '–';
+  $('k-pico-sub').textContent = pico ? `${pico[1]} bajas` : '';
+}
+
+/* ================= gráfico mensual ================= */
+function renderMes(rows) {
+  const W = 680, H = 250, mL = 30, mR = 8, mT = 26, mB = 24;
+  const iw = W - mL - mR, ih = H - mT - mB;
+  const perMes = MESES.map(k => {
+    const v = rows.filter(r => kMes(r) === k && r.t === 'V').length;
+    const i = rows.filter(r => kMes(r) === k && r.t === 'I').length;
+    return { k, v, i, tot: v + i };
+  });
+  const maxTot = Math.max(...perMes.map(d => d.tot), 1);
+  const yMax = Math.max(5, Math.ceil(maxTot / 5) * 5);
+  const y = val => mT + ih - (val / yMax) * ih;
+  const step = iw / Math.max(MESES.length, 1);
+  const bw = Math.min(52, step * 0.5);
+  const GAP = 2;
+  const tickStep = yMax > 30 ? 10 : 5;
+
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Bajas por mes, apiladas por tipo">`;
+  for (let t = 0; t <= yMax; t += tickStep) {
+    s += `<line x1="${mL}" x2="${W - mR}" y1="${y(t)}" y2="${y(t)}" stroke="${t === 0 ? 'var(--baseline)' : 'var(--grid)'}" stroke-width="1"/>`;
+    s += `<text x="${mL - 6}" y="${y(t) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${t}</text>`;
+  }
+  perMes.forEach((d, idx) => {
+    const cx = mL + step * idx + step / 2;
+    const x = cx - bw / 2;
+    const hV = (d.v / yMax) * ih;
+    const hI = (d.i / yMax) * ih;
+    const yV = y(d.v);
+    const r = 4;
+    if (d.i > 0) {
+      const yI = yV - GAP - hI;
+      s += roundedTop(x, yI, bw, Math.max(hI, 1.5), r, 'var(--i)');
+      if (d.v > 0) s += `<rect x="${x}" y="${yV}" width="${bw}" height="${Math.max(hV, 1.5)}" fill="var(--v)"/>`;
+    } else if (d.v > 0) {
+      s += roundedTop(x, yV, bw, Math.max(hV, 1.5), r, 'var(--v)');
+    }
+    if (d.tot > 0) s += `<text x="${cx}" y="${(d.i > 0 ? yV - GAP - hI : yV) - 6}" text-anchor="middle" font-size="12" fill="var(--ink-2)">${d.tot}</text>`;
+    s += `<text x="${cx}" y="${H - 6}" text-anchor="middle" font-size="11.5" fill="var(--muted)">${mesAbr(d.k)}</text>`;
+    s += `<rect x="${mL + step * idx}" y="${mT}" width="${step}" height="${ih}" fill="transparent" data-tip="${esc(`<b>${mesNom(d.k)}</b> — ${d.tot} baja${d.tot === 1 ? '' : 's'}<br>Voluntarias: <b>${d.v}</b> · Involuntarias: <b>${d.i}</b>`)}"/>`;
+  });
+  s += '</svg>';
+  $('c-mes').innerHTML = s;
+}
+function roundedTop(x, yy, w, h, r, fill) {
+  r = Math.min(r, h, w / 2);
+  return `<path d="M${x},${yy + h} L${x},${yy + r} Q${x},${yy} ${x + r},${yy} L${x + w - r},${yy} Q${x + w},${yy} ${x + w},${yy + r} L${x + w},${yy + h} Z" fill="${fill}"/>`;
+}
+
+/* ================= barras horizontales ================= */
+function renderHBars(el, items, tipLabel) {
+  const max = Math.max(...items.map(d => d.n), 1);
+  el.innerHTML = items.map(d => `
+    <div class="hrow" data-tip="${esc(`<b>${d.label}</b><br>${d.n} baja${d.n === 1 ? '' : 's'} · ${pct(d.n, d.total)} ${tipLabel}`)}">
+      <span class="hl" title="${esc(d.label)}">${esc(d.label)}</span>
+      <span class="track"><span class="bar" style="width:${(d.n / max * 100).toFixed(1)}%; background:${d.color}"></span></span>
+      <span class="hv">${d.n}</span>
+    </div>`).join('');
+}
+
+function renderMotivo(rows) {
+  const m = new Map();
+  rows.forEach(r => { const k = r.m + '|' + r.t; m.set(k, (m.get(k) || 0) + 1); });
+  const items = [...m.entries()].map(([k, n]) => {
+    const [label, t] = k.split('|');
+    return { label: label + (label === 'Fin de contrato' ? (t === 'V' ? ' (vol.)' : ' (invol.)') : ''), n, total: rows.length, color: t === 'V' ? 'var(--v)' : 'var(--i)' };
+  }).sort((a, b) => b.n - a.n);
+  renderHBars($('c-motivo'), items, 'del total filtrado');
+}
+
+function renderDim(el, rows, key) {
+  const items = [...countBy(rows, key).entries()]
+    .map(([label, n]) => ({ label, n, total: rows.length, color: 'var(--v)' }))
+    .sort((a, b) => b.n - a.n);
+  renderHBars(el, items, 'del total filtrado');
+}
+
+/* ================= género ================= */
+function renderGenero(rows) {
+  const m = rows.filter(r => r.g === 'M').length;
+  const f = rows.length - m;
+  const bar = $('c-gen-bar'), leg = $('c-gen-leg');
+  if (!rows.length) { bar.innerHTML = ''; leg.innerHTML = '<span class="row">Sin datos para los filtros actuales.</span>'; return; }
+  bar.innerHTML =
+    (m ? `<div style="flex:${m}; background:var(--v)" data-tip="<b>Masculino</b>: ${m} (${pct(m, rows.length)})"></div>` : '') +
+    (f ? `<div style="flex:${f}; background:var(--i)" data-tip="<b>Femenino</b>: ${f} (${pct(f, rows.length)})"></div>` : '');
+  leg.innerHTML = `
+    <span class="row"><span class="sw v"></span>Masculino&nbsp;<b>${m}</b>&nbsp;· ${pct(m, rows.length)}</span>
+    <span class="row"><span class="sw i"></span>Femenino&nbsp;<b>${f}</b>&nbsp;· ${pct(f, rows.length)}</span>`;
+}
+
+/* ================= tabla ================= */
+function renderTable(rows) {
+  const q = state.q;
+  const list = rows
+    .filter(r => !q || [r.n, r.s, r.dir, r.ger, r.bp, r.m].join(' ').toLowerCase().includes(q))
+    .sort((a, b) => a.f.localeCompare(b.f));
+  $('tbody').innerHTML = list.map(r => {
+    const [y, mo, d] = r.f.split('-');
+    return `<tr>
+      <td>${esc(r.n)}</td>
+      <td class="num">${d}/${mo}/${y}</td>
+      <td><span class="pill ${r.t}">${r.t === 'V' ? 'Voluntaria' : 'Involuntaria'}</span></td>
+      <td>${esc(r.m)}</td>
+      <td>${esc(r.s)}</td>
+      <td>${esc(r.dir)}</td>
+      <td>${esc(r.ger)}</td>
+      <td>${esc(r.bp)}</td>
+    </tr>`;
+  }).join('');
+  $('tempty').hidden = list.length > 0;
+  $('tcount').textContent = `${list.length} de ${DATA.length} registros`;
+}
+
+/* ================= tooltip ================= */
+const tip = $('tip');
+document.addEventListener('mouseover', e => {
+  const t = e.target.closest('[data-tip]');
+  if (t) { tip.innerHTML = t.dataset.tip; tip.style.display = 'block'; }
+  else tip.style.display = 'none';
+});
+document.addEventListener('mousemove', e => {
+  if (tip.style.display !== 'block') return;
+  const pad = 14;
+  let x = e.clientX + pad, yy = e.clientY + pad;
+  const r = tip.getBoundingClientRect();
+  if (x + r.width > innerWidth - 8) x = e.clientX - r.width - pad;
+  if (yy + r.height > innerHeight - 8) yy = e.clientY - r.height - pad;
+  tip.style.left = x + 'px'; tip.style.top = yy + 'px';
+});
+
+/* ================= render maestro ================= */
+function render() {
+  const rows = filtered();
+  $('f-clear').classList.toggle('on', !!(state.mes || state.tipo || state.sitio));
+  renderKPIs(rows);
+  renderMes(rows);
+  renderMotivo(rows);
+  renderDim($('c-sitio'), rows, r => r.s);
+  renderDim($('c-dir'), rows, r => r.dir);
+  renderGenero(rows);
+  renderTable(rows);
+}
+</script>
+</body>
+</html>
