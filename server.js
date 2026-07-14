@@ -152,7 +152,11 @@ app.post('/admin/usuarios/:id/eliminar', requiereAdmin, async (req, res) => {
 
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(500).send('Error del servidor. Revisá la conexión a la base de datos.');
+  // Pista de diagnóstico: indica si la variable existe, sin revelar su valor
+  const pista = process.env.DATABASE_URL
+    ? `DATABASE_URL está definida — error real: ${err.code || err.message}`
+    : 'DATABASE_URL NO está definida en este entorno: cargala en Vercel (Production y Preview) y hacé Redeploy.';
+  res.status(500).send(`Error del servidor. Revisá la conexión a la base de datos.<br><small>${pista}</small>`);
 });
 
 // En Vercel se exporta la app; en local se levanta el servidor
