@@ -1,0 +1,18 @@
+# dependencias
+node_modules/
+
+# secretos — NUNCA subir al repo
+.env
+.env.local
+.env*.local
+
+# vercel
+.vercel/
+
+# sistema
+.DS_Store
+Thumbs.db
+
+# logs
+*.log
+npm-debug.log*
