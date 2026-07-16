@@ -1,0 +1,1579 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel de Personal — Holcim Argentina</title>
+<style>
+  /* ---------- barra de sesión ---------- */
+  .sesion {
+    display: flex; align-items: center; gap: 12px; justify-content: flex-end;
+    font-size: 12.5px; color: var(--muted); margin-bottom: 10px;
+  }
+  .sesion a { color: var(--v); text-decoration: none; }
+  .sesion a:hover { text-decoration: underline; }
+  .sesion form { margin: 0; }
+  .sesion button {
+    font: inherit; font-size: 12.5px; color: var(--ink-2);
+    background: none; border: 1px solid var(--border); border-radius: 8px;
+    padding: 4px 10px; cursor: pointer;
+  }
+  .sesion button:hover { background: var(--hover-wash); }
+
+  :root {
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --v: #2a78d6;   /* serie Voluntaria / MTP */
+    --i: #1baf7a;   /* serie Involuntaria / Real-cumplido */
+    --neg: #c0392b;  /* gap negativo */
+    --hover-wash: rgba(11, 11, 11, 0.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
+      --muted: #898781; --grid: #2c2c2a; --baseline: #383835;
+      --border: rgba(255, 255, 255, 0.10);
+      --v: #3987e5; --i: #199e70; --neg: #e0564a;
+      --hover-wash: rgba(255, 255, 255, 0.05);
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
+    --muted: #898781; --grid: #2c2c2a; --baseline: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --v: #3987e5; --i: #199e70; --neg: #e0564a;
+    --hover-wash: rgba(255, 255, 255, 0.05);
+  }
+  :root[data-theme="light"] {
+    --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e;
+    --muted: #898781; --grid: #e1e0d9; --baseline: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --v: #2a78d6; --i: #1baf7a; --neg: #c0392b;
+    --hover-wash: rgba(11, 11, 11, 0.04);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--ink);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 48px; }
+
+  /* ---------- header global ---------- */
+  header.top .eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
+  }
+  header.top h1 { font-size: 24px; font-weight: 700; margin: 0 0 4px; text-wrap: balance; }
+  header.top .sub { color: var(--ink-2); font-size: 13px; margin: 0; }
+
+  /* ---------- tabs ---------- */
+  .tabs { display: flex; gap: 22px; border-bottom: 1px solid var(--border); margin: 18px 0 22px; }
+  .tab-btn {
+    font: inherit; font-size: 13.5px; font-weight: 600; color: var(--muted);
+    background: none; border: none; border-bottom: 2px solid transparent;
+    padding: 10px 2px; margin-bottom: -1px; cursor: pointer;
+  }
+  .tab-btn:hover { color: var(--ink); }
+  .tab-btn.active { color: var(--ink); border-bottom-color: var(--v); }
+
+  /* ---------- section head (por vista) ---------- */
+  .section-head h1 { font-size: 19px; font-weight: 700; margin: 0 0 4px; text-wrap: balance; }
+  .section-head .sub { color: var(--ink-2); font-size: 13px; margin: 0 0 4px; }
+
+  /* ---------- carga de excel ---------- */
+  .upload-bar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin: 14px 0 0; padding: 10px 12px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  }
+  .upload-btn {
+    font: inherit; font-size: 12.5px; font-weight: 600; color: var(--ink);
+    background: var(--page); border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 12px; cursor: pointer; white-space: nowrap;
+  }
+  .upload-btn:hover { background: var(--hover-wash); }
+  .file-input-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
+  .upload-status { font-size: 12px; color: var(--muted); }
+  .upload-status.ok { color: var(--i); }
+  .upload-status.err { color: var(--neg); }
+
+  /* ---------- filtros ---------- */
+  .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 20px 0 18px; }
+  .filters label { font-size: 12px; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
+  .filters select {
+    font: inherit; font-size: 13px; color: var(--ink);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 10px; min-width: 130px;
+  }
+  .filters select:focus-visible, .filters button:focus-visible, .search input:focus-visible {
+    outline: 2px solid var(--v); outline-offset: 1px;
+  }
+  .filters button {
+    font: inherit; font-size: 13px; color: var(--ink-2);
+    background: none; border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 12px; cursor: pointer; visibility: hidden;
+  }
+  .filters button.on { visibility: visible; }
+  .filters button:hover { background: var(--hover-wash); }
+
+  /* ---------- KPIs ---------- */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px; }
+  @media (max-width: 780px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .kpi .lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .kpi .val { font-size: 30px; font-weight: 700; line-height: 1.15; margin-top: 2px; }
+  .kpi .val.pos { color: var(--i); } .kpi .val.neg { color: var(--neg); }
+  .kpi .sub { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+
+  /* ---------- tarjetas / grilla ---------- */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 780px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; min-width: 0; }
+  .card.full { grid-column: 1 / -1; }
+  .card h2 { font-size: 14px; font-weight: 650; margin: 0; }
+  .card .hint { font-size: 12px; color: var(--muted); margin: 1px 0 12px; }
+  .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+
+  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+  .sw.v { background: var(--v); } .sw.i { background: var(--i); } .sw.n { background: var(--neg); }
+  .sw.line { width: 14px; height: 3px; border-radius: 2px; }
+
+  /* ---------- section-divider dentro de la pestaña MTP ---------- */
+  .subsection-head { margin: 26px 0 12px; padding-top: 18px; border-top: 1px solid var(--border); }
+  .subsection-head:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
+  .subsection-head h3 { font-size: 15px; font-weight: 700; margin: 0 0 3px; }
+  .subsection-head .hint { font-size: 12.5px; color: var(--ink-2); margin: 0; }
+
+  /* ---------- chart mensual ---------- */
+  .chart-mes svg { display: block; width: 100%; height: auto; }
+  .chart-mes text { font-family: inherit; }
+
+  /* ---------- barras horizontales ---------- */
+  .hbars { display: flex; flex-direction: column; gap: 7px; }
+  .hrow { display: grid; grid-template-columns: 138px 1fr 40px; align-items: center; gap: 8px; border-radius: 6px; padding: 2px 4px; }
+  .hrow:hover { background: var(--hover-wash); }
+  .hrow .hl { font-size: 12.5px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hrow .track { height: 14px; display: flex; align-items: center; min-width: 0; position: relative; background: var(--grid); border-radius: 2px 4px 4px 2px; }
+  .hrow .bar { height: 14px; border-radius: 2px 4px 4px 2px; min-width: 2px; position: absolute; top: 0; }
+  .hrow .hv { font-size: 12.5px; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* ---------- tabla ---------- */
+  .search { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .search input {
+    font: inherit; font-size: 13px; color: var(--ink);
+    background: var(--page); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 10px; width: 260px; max-width: 100%;
+  }
+  .search .count { font-size: 12px; color: var(--muted); }
+  .tblwrap { overflow: auto; max-height: 420px; border: 1px solid var(--border); border-radius: 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+  thead th {
+    position: sticky; top: 0; background: var(--surface); z-index: 1;
+    text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+    text-transform: uppercase; color: var(--muted);
+    padding: 8px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap;
+  }
+  tbody td { padding: 7px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; color: var(--ink-2); }
+  tbody td:first-child { color: var(--ink); font-weight: 500; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--hover-wash); }
+  td.num { font-variant-numeric: tabular-nums; }
+  .pill { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 99px; color: var(--ink); }
+  .pill.V { background: color-mix(in srgb, var(--v) 18%, transparent); }
+  .pill.I { background: color-mix(in srgb, var(--i) 22%, transparent); }
+  .pill.pos { background: color-mix(in srgb, var(--i) 20%, transparent); color: var(--i); }
+  .pill.neg { background: color-mix(in srgb, var(--neg) 18%, transparent); color: var(--neg); }
+  .empty { padding: 24px; text-align: center; color: var(--muted); }
+
+  /* ---------- tooltip ---------- */
+  #tip {
+    position: fixed; pointer-events: none; z-index: 10; display: none;
+    background: var(--ink); color: var(--page);
+    font-size: 12px; line-height: 1.5; padding: 7px 10px; border-radius: 8px;
+    max-width: 260px; box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  }
+  #tip b { font-variant-numeric: tabular-nums; }
+
+  footer.bottom { margin-top: 20px; font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hrow .bar { transition: width 0.25s ease, left 0.25s ease; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="sesion">
+    <span>Sesión de <strong><%= usuario %></strong></span>
+    <% if (esAdmin) { %><a href="/admin">Administración</a><% } %>
+    <form method="post" action="/logout"><button type="submit">Cerrar sesión</button></form>
+  </div>
+  <header class="top">
+    <div class="eyebrow">Recursos Humanos · Argentina</div>
+    <h1>Panel de Personal — Holcim Argentina</h1>
+    <p class="sub">Bajas de personal y control de dotación (Real vs MTP). Elegí la pestaña y cargá el Excel correspondiente en cada una.</p>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Vistas">
+    <button class="tab-btn active" id="tab-btn-bajas" type="button" role="tab" aria-selected="true">Bajas de personal</button>
+    <button class="tab-btn" id="tab-btn-mtp" type="button" role="tab" aria-selected="false">Comparación Headcount vs MTP</button>
+    <button class="tab-btn" id="tab-btn-altas" type="button" role="tab" aria-selected="false">Altas de personal</button>
+  </nav>
+
+  <!-- ============================================================ -->
+  <!-- VISTA: BAJAS                                                  -->
+  <!-- ============================================================ -->
+  <section id="view-bajas">
+    <div class="section-head">
+      <h1 id="header-h1">Bajas de personal — Enero a Junio 2026</h1>
+      <p class="sub">Desvinculaciones registradas por mes, motivo, sitio y dirección. Fuente: planilla de RRHH (Google Sheets).</p>
+    </div>
+
+    <div class="upload-bar">
+      <% if (esAdmin) { %>
+      <label class="upload-btn" for="file-input">📤 Cargar nuevo Excel (.xlsx)</label>
+      <input type="file" class="file-input-hidden" id="file-input" accept=".xlsx,.xls" />
+      <% } %>
+      <span class="upload-status" id="upload-status">Datos iniciales cargados.</span>
+    </div>
+
+    <div class="filters" role="group" aria-label="Filtros de bajas">
+      <label>Mes <select id="f-mes"><option value="">Todos</option></select></label>
+      <label>Tipo
+        <select id="f-tipo">
+          <option value="">Todos</option>
+          <option value="V">Voluntaria</option>
+          <option value="I">Involuntaria</option>
+        </select>
+      </label>
+      <label>Sitio <select id="f-sitio"><option value="">Todos</option></select></label>
+      <button id="f-clear" type="button">Limpiar filtros</button>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="lbl">Total bajas</div><div class="val" id="k-total">–</div><div class="sub" id="k-total-sub"></div></div>
+      <div class="kpi"><div class="lbl">Voluntarias</div><div class="val" id="k-vol">–</div><div class="sub" id="k-vol-sub"></div></div>
+      <div class="kpi"><div class="lbl">Involuntarias</div><div class="val" id="k-inv">–</div><div class="sub" id="k-inv-sub"></div></div>
+      <div class="kpi"><div class="lbl">Mes pico</div><div class="val" id="k-pico">–</div><div class="sub" id="k-pico-sub"></div></div>
+    </div>
+
+    <div class="grid">
+      <div class="card full">
+        <div class="card-head">
+          <div><h2>Bajas por mes</h2><div class="hint">Apiladas por tipo de baja</div></div>
+          <div class="legend"><span><span class="sw v"></span>Voluntaria</span><span><span class="sw i"></span>Involuntaria</span></div>
+        </div>
+        <div class="chart-mes" id="c-mes"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div><h2>Por motivo</h2><div class="hint">Color según tipo de baja</div></div></div>
+        <div class="hbars" id="c-motivo"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div><h2>Por sitio</h2><div class="hint">Planta / división de personal</div></div></div>
+        <div class="hbars" id="c-sitio"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div><h2>Por dirección</h2><div class="hint">Estructura organizativa</div></div></div>
+        <div class="hbars" id="c-dir"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div><h2>Género</h2><div class="hint">Distribución de las bajas</div></div></div>
+        <div class="propbar" id="c-gen-bar" style="display:flex;height:22px;border-radius:6px;overflow:hidden;gap:2px;margin-bottom:10px;"></div>
+        <div class="prop-legend" id="c-gen-leg" style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--ink-2);"></div>
+      </div>
+
+      <div class="card full">
+        <div class="card-head"><div><h2>Detalle de bajas</h2><div class="hint">Todos los registros del período filtrado</div></div></div>
+        <div class="search">
+          <input id="q" type="search" placeholder="Buscar por nombre, sitio, gerencia…" aria-label="Buscar en la tabla">
+          <span class="count" id="tcount"></span>
+        </div>
+        <div class="tblwrap">
+          <table>
+            <thead><tr><th>Empleado</th><th>Fecha</th><th>Tipo</th><th>Motivo</th><th>Sitio</th><th>Dirección</th><th>Gerencia</th><th>BP</th></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+          <div class="empty" id="tempty" hidden>Sin resultados con los filtros actuales.</div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="bottom">
+      <span id="footer-text">Elaborado a partir de la planilla de bajas (70 registros, ene–jun 2026). Nota de calidad de datos: 4 registros tienen la columna DIRECCION vacía o mal cargada en la planilla y figuran como “Sin dato”.</span>
+    </footer>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- VISTA: COMPARACIÓN HEADCOUNT VS MTP                           -->
+  <!-- ============================================================ -->
+  <section id="view-mtp" hidden>
+    <div class="section-head">
+      <h1 id="mtp-h1">Headcount Real vs MTP — 2026</h1>
+      <p class="sub">Comparación general: dotación real de <b>todas</b> las plantas vs. MTP y vs. línea base al 31/12/25. Las 4 plantas con Blueprint fijo (Capdeville, Campana, Malagueño, Puesto Viejo) se comparan además, en un bloque aparte, sin afectar el % de cumplimiento general.</p>
+    </div>
+
+    <div class="upload-bar">
+      <% if (esAdmin) { %>
+      <label class="upload-btn" for="mtp-file-input">📤 Cargar nuevo Excel (.xlsx)</label>
+      <input type="file" class="file-input-hidden" id="mtp-file-input" accept=".xlsx,.xls" />
+      <% } %>
+      <span class="upload-status" id="mtp-upload-status">Datos iniciales cargados.</span>
+    </div>
+
+    <div class="filters" role="group" aria-label="Filtros de headcount">
+      <label>Mes <select id="mtp-f-mes"></select></label>
+    </div>
+
+    <!-- ---------- BLOQUE 1: TODAS LAS PLANTAS (vs. MTP y línea base) ---------- -->
+    <div class="subsection-head">
+      <h3>1. Todas las plantas — Real vs. MTP y vs. Línea base 31/12/25</h3>
+      <p class="hint">Base del % de cumplimiento general. No incluye Blueprint.</p>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="lbl">Headcount Real</div><div class="val" id="mtp-k-real">–</div><div class="sub" id="mtp-k-real-sub"></div></div>
+      <div class="kpi"><div class="lbl">vs. Línea base 31/12/25</div><div class="val" id="mtp-k-base">–</div><div class="sub" id="mtp-k-base-sub"></div></div>
+      <div class="kpi"><div class="lbl">vs. Objetivo (MTP)</div><div class="val" id="mtp-k-gap">–</div><div class="sub" id="mtp-k-gap-sub"></div></div>
+      <div class="kpi"><div class="lbl">% Cumplimiento</div><div class="val" id="mtp-k-pct">–</div><div class="sub" id="mtp-k-pct-sub"></div></div>
+    </div>
+
+    <div class="grid">
+      <div class="card full">
+        <div class="card-head">
+          <div><h2>Evolución temporal del headcount</h2><div class="hint">Total compañía (todas las plantas) — Real vs. MTP vs. Línea base 31/12/25, enero a junio</div></div>
+          <div class="legend"><span><span class="sw line" style="background:var(--i)"></span>Real</span><span><span class="sw line" style="background:var(--v)"></span>MTP</span><span><span class="sw line" style="background:var(--muted); border-top:2px dashed var(--muted); height:0;"></span>Línea base 31/12/25</span></div>
+        </div>
+        <div class="chart-mes" id="mtp-c-trend"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div><h2>Todas las plantas</h2><div class="hint">Real − MTP del mes seleccionado</div></div></div>
+        <div class="hbars" id="mtp-c-estandar"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div><h2>Distribución de headcount</h2><div class="hint">Todas las plantas, real del mes seleccionado, de mayor a menor</div></div></div>
+        <div class="hbars" id="mtp-c-dist"></div>
+      </div>
+
+      <div class="card full">
+        <div class="card-head"><div><h2>Detalle por planta</h2><div class="hint">Línea base, real, MTP y diferencia — mes seleccionado (todas las plantas)</div></div></div>
+        <div class="search">
+          <input id="mtp-q" type="search" placeholder="Buscar por planta…" aria-label="Buscar en la tabla de headcount">
+          <span class="count" id="mtp-tcount"></span>
+        </div>
+        <div class="tblwrap">
+          <table>
+            <thead><tr><th>Planta</th><th>Tipo</th><th>Línea base 31/12/25</th><th>Real</th><th>MTP</th><th>Diferencia</th></tr></thead>
+            <tbody id="mtp-tbody"></tbody>
+          </table>
+          <div class="empty" id="mtp-tempty" hidden>Sin resultados con los filtros actuales.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- BLOQUE 2: PLANTAS BLUEPRINT (comparación adicional) ---------- -->
+    <div class="subsection-head">
+      <h3>2. Plantas Blueprint — Capdeville, Campana, Malagueño y Puesto Viejo</h3>
+      <p class="hint">Comparación adicional (Real, Línea base, MTP y Blueprint juntos). No modifica el % de cumplimiento general del Bloque 1.</p>
+    </div>
+
+    <div class="grid">
+      <div class="card full">
+        <div class="card-head">
+          <div><h2>Matriz de brecha Blueprint</h2><div class="hint">Capdeville, Campana, Malagueño y Puesto Viejo — Real | Blueprint | MTP del mes seleccionado</div></div>
+          <div class="legend">
+            <span><span class="sw" style="background:var(--i);border-radius:3px;"></span>Real</span>
+            <span><span class="sw" style="background:#c0392b;border-radius:3px;"></span>Blueprint</span>
+            <span><span class="sw" style="background:var(--v);border-radius:3px;"></span>MTP</span>
+          </div>
+        </div>
+        <div class="chart-mes" id="mtp-c-blueprint"></div>
+      </div>
+
+      <div class="card full">
+        <div class="card-head"><div><h2>Detalle Blueprint</h2><div class="hint">Línea base, Real, MTP y Blueprint — mes seleccionado</div></div></div>
+        <div class="tblwrap">
+          <table>
+            <thead><tr><th>Planta</th><th>Línea base 31/12/25</th><th>Real</th><th>MTP</th><th>Blueprint</th><th>Dif. vs Blueprint</th><th>% cumpl. Blueprint</th></tr></thead>
+            <tbody id="mtp-bp-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <footer class="bottom">
+      <span id="mtp-footer-text"></span>
+    </footer>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- VISTA: ALTAS DE PERSONAL                                      -->
+  <!-- ============================================================ -->
+  <section id="view-altas" hidden>
+    <div class="section-head">
+      <h1 id="altas-h1">Altas de personal — Enero a Junio 2026</h1>
+      <p class="sub">Ingresos registrados por mes, sitio y género. Fuente: planilla de RRHH (hoja ALTAS).</p>
+    </div>
+
+    <div class="upload-bar">
+      <% if (esAdmin) { %>
+      <label class="upload-btn" for="altas-file-input">📤 Cargar nuevo Excel (.xlsx)</label>
+      <input type="file" class="file-input-hidden" id="altas-file-input" accept=".xlsx,.xls" />
+      <% } %>
+      <span class="upload-status" id="altas-upload-status">Datos iniciales cargados.</span>
+    </div>
+
+    <div class="filters" role="group" aria-label="Filtros de altas">
+      <label>Mes <select id="altas-f-mes"><option value="">Todos</option></select></label>
+      <label>Sitio <select id="altas-f-sitio"><option value="">Todos</option></select></label>
+      <label>Género
+        <select id="altas-f-genero">
+          <option value="">Todos</option>
+          <option value="F">Femenino</option>
+          <option value="M">Masculino</option>
+        </select>
+      </label>
+      <button id="altas-f-clear" type="button">Limpiar filtros</button>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="lbl">Total altas</div><div class="val" id="altas-k-total">–</div><div class="sub" id="altas-k-total-sub"></div></div>
+      <div class="kpi"><div class="lbl">Femeninas</div><div class="val" id="altas-k-f">–</div><div class="sub" id="altas-k-f-sub"></div></div>
+      <div class="kpi"><div class="lbl">Masculinas</div><div class="val" id="altas-k-m">–</div><div class="sub" id="altas-k-m-sub"></div></div>
+      <div class="kpi"><div class="lbl">Mes pico</div><div class="val" id="altas-k-pico">–</div><div class="sub" id="altas-k-pico-sub"></div></div>
+    </div>
+
+    <div class="grid">
+      <div class="card full">
+        <div class="card-head">
+          <div><h2>Altas por mes</h2><div class="hint">Apiladas por género</div></div>
+          <div class="legend"><span><span class="sw v"></span>Masculino</span><span><span class="sw i"></span>Femenino</span></div>
+        </div>
+        <div class="chart-mes" id="altas-c-mes"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div><h2>Por sitio</h2><div class="hint">Planta / división de personal</div></div></div>
+        <div class="hbars" id="altas-c-sitio"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div><h2>Género por planta</h2><div class="hint">Distribución M / F de las altas en cada sitio</div></div></div>
+        <div class="hbars" id="altas-c-genero-sitio"></div>
+      </div>
+
+      <div class="card full">
+        <div class="card-head">
+          <div><h2>Evolución de % de mujeres en altas</h2><div class="hint">Trayectoria mes a mes de cada planta — dotación real de cierre de cada mes (nómina enero + nóminas reales feb-jun)</div></div>
+        </div>
+        <div class="chart-mes" id="altas-c-diversidad"></div>
+        <div id="altas-div-legend" style="display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:10px;font-size:12px;color:var(--ink-2);"></div>
+        <div class="tblwrap" style="margin-top:14px;">
+          <table>
+            <thead><tr>
+              <th>Planta</th><th>Dotación Ene (Total)</th><th>% mujeres Ene</th>
+              <th>Altas Fem. (Feb→<span id="altas-div-mes-lbl">Jun</span>)</th>
+              <th>Altas Masc. (Feb→<span id="altas-div-mes-lbl2">Jun</span>)</th>
+              <th>Bajas Fem. (Feb→<span id="altas-div-mes-lbl3">Jun</span>)</th>
+              <th>Bajas Masc. (Feb→<span id="altas-div-mes-lbl4">Jun</span>)</th>
+              <th>Dotación actual (real)</th>
+              <th>% mujeres actual</th><th>Variación (p.p.)</th>
+            </tr></thead>
+            <tbody id="altas-div-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card full">
+        <div class="card-head"><div><h2>Detalle de altas</h2><div class="hint">Todos los ingresos del período filtrado</div></div></div>
+        <div class="search">
+          <input id="altas-q" type="search" placeholder="Buscar por nombre o sitio…" aria-label="Buscar en la tabla de altas">
+          <span class="count" id="altas-tcount"></span>
+        </div>
+        <div class="tblwrap">
+          <table>
+            <thead><tr><th>Empleado</th><th>Fecha</th><th>Género</th><th>Motivo</th><th>Sitio</th></tr></thead>
+            <tbody id="altas-tbody"></tbody>
+          </table>
+          <div class="empty" id="altas-tempty" hidden>Sin resultados con los filtros actuales.</div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="bottom">
+      <span id="altas-footer-text"></span>
+    </footer>
+  </section>
+</div>
+
+<div id="tip" role="tooltip"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* ================================================================ */
+/* Almacenamiento compartido: los datasets viven en la base de      */
+/* datos del servidor (Neon Postgres) vía /api/datos/:clave.        */
+/* ================================================================ */
+window.storage = {
+  async get(clave) {
+    const r = await fetch('/api/datos/' + encodeURIComponent(clave));
+    if (!r.ok) throw new Error('no se pudieron leer los datos del servidor (' + r.status + ')');
+    return r.json(); // { value: string | null }
+  },
+  async set(clave, value) {
+    const r = await fetch('/api/datos/' + encodeURIComponent(clave), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value }),
+    });
+    if (!r.ok) throw new Error('el servidor respondió ' + r.status);
+  },
+};
+</script>
+<script>
+/* ================================================================ */
+/* Helpers comunes                                                   */
+/* ================================================================ */
+const $ = id => document.getElementById(id);
+/* los inputs de carga solo existen para administradores */
+const onChange = (id, fn) => { const el = $(id); if (el) el.addEventListener('change', fn); };
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+const pct = (n, d) => d ? Math.round(n / d * 100) + '%' : '–';
+
+const tip = $('tip');
+document.addEventListener('mouseover', e => {
+  const t = e.target.closest('[data-tip]');
+  if (t) { tip.innerHTML = t.dataset.tip; tip.style.display = 'block'; }
+  else tip.style.display = 'none';
+});
+document.addEventListener('mousemove', e => {
+  if (tip.style.display !== 'block') return;
+  const pad = 14;
+  let x = e.clientX + pad, yy = e.clientY + pad;
+  const r = tip.getBoundingClientRect();
+  if (x + r.width > innerWidth - 8) x = e.clientX - r.width - pad;
+  if (yy + r.height > innerHeight - 8) yy = e.clientY - r.height - pad;
+  tip.style.left = x + 'px'; tip.style.top = yy + 'px';
+});
+
+function renderHBars(el, items, tipLabel) {
+  const max = Math.max(...items.map(d => Math.abs(d.n)), 1);
+  el.innerHTML = items.map(d => {
+    const w = (Math.abs(d.n) / max * 100).toFixed(1);
+    const left = d.n < 0 ? (100 - w) : 0;
+    return `
+    <div class="hrow" data-tip="${esc(d.tip || (`<b>${d.label}</b><br>${d.n} · ${tipLabel || ''}`))}">
+      <span class="hl" title="${esc(d.label)}">${esc(d.label)}</span>
+      <span class="track"><span class="bar" style="width:${w}%; left:${left}%; background:${d.color}"></span></span>
+      <span class="hv">${d.n > 0 ? '+' : ''}${d.n}</span>
+    </div>`;
+  }).join('');
+}
+function countBy(arr, key) {
+  const m = new Map();
+  arr.forEach(r => { const k = key(r); m.set(k, (m.get(k) || 0) + 1); });
+  return m;
+}
+
+/* ================================================================ */
+/* VISTA: BAJAS DE PERSONAL                                          */
+/* ================================================================ */
+const DATA_DEFAULT = [{"n": "RIOS, MIGUEL ANGEL", "g": "M", "t": "V", "m": "Mutuo acuerdo", "s": "Pta. Puesto Viejo", "f": "2026-01-27", "mes": 1, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta puesto viejo", "bp": "MARTIN, CARLOS ALBERTO"}, {"n": "MERCADO, DAMIAN SEGUNDO", "g": "M", "t": "V", "m": "Jubilación", "s": "Pta. Capdeville", "f": "2026-01-17", "mes": 1, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta capdeville", "bp": "DEVITA, ANALIA LOURDES"}, {"n": "GONZALEZ, GEORGINA GISELA", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-01-02", "mes": 1, "dir": "Dirección Comercial", "ger": "Sin dato", "bp": "Sin dato"}, {"n": "PEREZ, JOSE OSVALDO", "g": "M", "t": "I", "m": "Despido con causa", "s": "Adm. Central MG", "f": "2026-01-27", "mes": 1, "dir": "Dirección General", "ger": "Gcia. supply chain", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "LESLIE, MILAGROS", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-01-01", "mes": 1, "dir": "Dirección General", "ger": "Gcia. de negocio disensa", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "PANTOJA, ERICO JULIAN", "g": "M", "t": "I", "m": "Despido sin causa", "s": "Pta. Puesto Viejo", "f": "2026-01-27", "mes": 1, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta puesto viejo", "bp": "MARTIN, CARLOS ALBERTO"}, {"n": "DIAZ, JOAQUINA GUADALUPE", "g": "F", "t": "V", "m": "Renuncia", "s": "Pta. Campana", "f": "2026-01-14", "mes": 1, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta campana", "bp": "DAMONTE, IGNACIO FABIAN"}, {"n": "ROCHA, CINTIA JOHANNA", "g": "F", "t": "V", "m": "Fin de contrato", "s": "Pta. Campana", "f": "2026-01-16", "mes": 1, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta campana", "bp": "DAMONTE, IGNACIO FABIAN"}, {"n": "FLEIDERMAN, CLARA BELEN", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-01-24", "mes": 1, "dir": "Sin dato", "ger": "Sin dato", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "ECHAVARRIA, MARIA CANDELARIA", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-01-17", "mes": 1, "dir": "Dirección General", "ger": "Gcia. supply chain", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "SIBILLA GAIO, MARIA EMILIA", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-01-24", "mes": 1, "dir": "Dirección de Administracion y Finanzas", "ger": "Gcia. de administración y  finanzas", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "CORNEJO, GONZALO MATIAS", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Córdoba Norte", "f": "2026-01-28", "mes": 1, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "CORREDERA, FLORENCIA BELEN", "g": "F", "t": "V", "m": "Renuncia", "s": "Pta. Córdoba Norte", "f": "2026-01-01", "mes": 1, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "BUTELER, MARIA EUGENIA", "g": "F", "t": "I", "m": "Despido sin causa", "s": "Adm. Central MG", "f": "2026-02-10", "mes": 2, "dir": "Sin dato", "ger": "Sin dato", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "RAVIOLO, MARIA MARTA", "g": "F", "t": "I", "m": "Despido sin causa", "s": "Adm. Central MG", "f": "2026-02-10", "mes": 2, "dir": "Sin dato", "ger": "Sin dato", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "ITURRIA, DANIEL EDUARDO", "g": "M", "t": "V", "m": "Renuncia", "s": "Añacua", "f": "2026-02-10", "mes": 2, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "PEDERNERA, BELEN", "g": "F", "t": "V", "m": "Renuncia", "s": "Pta. Capdeville", "f": "2026-02-24", "mes": 2, "dir": "Dirección Comercial", "ger": "Sin dato", "bp": "Sin dato"}, {"n": "SUAREZ, PAULA", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-02-09", "mes": 2, "dir": "Dirección Comercial", "ger": "Sin dato", "bp": "Sin dato"}, {"n": "FELDMANN, SANTIAGO ANDRES", "g": "M", "t": "I", "m": "Despido sin causa", "s": "Adm. Central MG", "f": "2026-02-11", "mes": 2, "dir": "Dirección General", "ger": "Gcia. de negocio disensa", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "GONZALEZ, MANUEL", "g": "M", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-02-24", "mes": 2, "dir": "Dirección General", "ger": "Gcia. de roofing y morteros", "bp": "DIMOV, JULIO LUCAS"}, {"n": "CUELLO, LUIS ANIBAL", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Córdoba Norte", "f": "2026-02-12", "mes": 2, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "ROJA, JULIO CESAR", "g": "M", "t": "I", "m": "Despido sin causa", "s": "Pta. Campana", "f": "2026-03-13", "mes": 3, "dir": "Dirección General", "ger": "Gcia. supply chain", "bp": "DAMONTE, IGNACIO FABIAN"}, {"n": "BURGOS, EVANGELINA ELENA", "g": "F", "t": "I", "m": "Despido sin causa", "s": "Pta. Puesto Viejo", "f": "2026-03-07", "mes": 3, "dir": "Dirección General", "ger": "Gcia. supply chain", "bp": "MARTIN, CARLOS ALBERTO"}, {"n": "LEON CEJAS, CLAUDIO FEDERICO", "g": "M", "t": "I", "m": "Despido sin causa", "s": "Pta. Puesto Viejo", "f": "2026-03-07", "mes": 3, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta puesto viejo", "bp": "MARTIN, CARLOS ALBERTO"}, {"n": "MARINO, DAVID SEBASTIAN", "g": "M", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-03-01", "mes": 3, "dir": "Dirección de Recursos Humanos", "ger": "Gcia. de recursos humanos", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "PEREZ GUILLEN, CESAR EDUARDO", "g": "M", "t": "I", "m": "Despido sin causa", "s": "Pta. Campana", "f": "2026-03-13", "mes": 3, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta campana", "bp": "DAMONTE, IGNACIO FABIAN"}, {"n": "YAMIN, NICOLAS NOE", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Capdeville", "f": "2026-03-07", "mes": 3, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta capdeville", "bp": "DEVITA, ANALIA LOURDES"}, {"n": "GRAÑA, LUCIANA INES", "g": "F", "t": "I", "m": "Despido sin causa", "s": "Pta. Malagueño", "f": "2026-03-06", "mes": 3, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta malagueño", "bp": "DIMOV, JULIO LUCAS"}, {"n": "GALINDEZ, MARIA CANDELARIA", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-03-07", "mes": 3, "dir": "Dirección Comercial", "ger": "Sin dato", "bp": "Sin dato"}, {"n": "LARIO BUSTOS, AXEL ADRIEL", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Yocsina", "f": "2026-03-04", "mes": 3, "dir": "Dirección General", "ger": "Gcia. de afr", "bp": "DIMOV, JULIO LUCAS"}, {"n": "BALZARELLI, JOSEFINA", "g": "F", "t": "V", "m": "Renuncia", "s": "Pta. Capdeville", "f": "2026-03-01", "mes": 3, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta capdeville", "bp": "DEVITA, ANALIA LOURDES"}, {"n": "GALBAN, RICARDO ISRAEL JONATHAN", "g": "M", "t": "I", "m": "Despido con causa", "s": "Pta. Campana", "f": "2026-04-11", "mes": 4, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta campana", "bp": "DAMONTE, IGNACIO FABIAN"}, {"n": "VILLARROEL, RAMON ANTONIO", "g": "M", "t": "V", "m": "Mutuo acuerdo", "s": "Pta. Malagueño", "f": "2026-04-17", "mes": 4, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta malagueño", "bp": "DIMOV, JULIO LUCAS"}, {"n": "MANSILLA, PABLO CESAR", "g": "M", "t": "I", "m": "Despido sin causa", "s": "Pta. Campana", "f": "2026-04-15", "mes": 4, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta campana", "bp": "DAMONTE, IGNACIO FABIAN"}, {"n": "ASCUA, MELINA BELEN", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-04-24", "mes": 4, "dir": "Dirección Comercial", "ger": "Sin dato", "bp": "Sin dato"}, {"n": "FRANCO, LUIS DARIO", "g": "M", "t": "I", "m": "Despido sin causa", "s": "Pta. Capdeville", "f": "2026-04-18", "mes": 4, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta capdeville", "bp": "DEVITA, ANALIA LOURDES"}, {"n": "ALMIRON, WILFREDO LUIS", "g": "M", "t": "V", "m": "Renuncia", "s": "Añacua", "f": "2026-04-07", "mes": 4, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "MESIAS, FACUNDO JAVIER", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Campana", "f": "2026-04-03", "mes": 4, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta campana", "bp": "DAMONTE, IGNACIO FABIAN"}, {"n": "D AGOSTINO, CECILIA ANDREA", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-04-07", "mes": 4, "dir": "Dirección de Recursos Humanos", "ger": "Gcia. de recursos humanos", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "CABELLO, FEDERICO", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Malagueño", "f": "2026-04-11", "mes": 4, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta malagueño", "bp": "DIMOV, JULIO LUCAS"}, {"n": "LIZZI, JUAN GABRIEL", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Capdeville", "f": "2026-04-15", "mes": 4, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta capdeville", "bp": "DEVITA, ANALIA LOURDES"}, {"n": "DIAZ, ELIAS DANIEL", "g": "M", "t": "V", "m": "Mutuo acuerdo", "s": "Pta. Malagueño", "f": "2026-05-09", "mes": 5, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta malagueño", "bp": "DIMOV, JULIO LUCAS"}, {"n": "CONDORI, FRANCISCO MAURO", "g": "M", "t": "V", "m": "Mutuo acuerdo", "s": "Pta. Puesto Viejo", "f": "2026-05-19", "mes": 5, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta puesto viejo", "bp": "MARTIN, CARLOS ALBERTO"}, {"n": "ANTECAO, CARLOS RAMON", "g": "M", "t": "V", "m": "Mutuo acuerdo", "s": "Pta. Puesto Viejo", "f": "2026-05-09", "mes": 5, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta puesto viejo", "bp": "MARTIN, CARLOS ALBERTO"}, {"n": "CRUZ, MARCELO DANIEL", "g": "M", "t": "V", "m": "Mutuo acuerdo", "s": "Pta. Puesto Viejo", "f": "2026-05-09", "mes": 5, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta puesto viejo", "bp": "MARTIN, CARLOS ALBERTO"}, {"n": "VIDELA, CLAUDIO RUBEN", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Córdoba Norte", "f": "2026-05-01", "mes": 5, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "BERRONDO LION, VALERIA ELISA", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-05-16", "mes": 5, "dir": "Sin dato", "ger": "Sin dato", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "VIJARRA, MARIA DE LOS ANGELES", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-05-16", "mes": 5, "dir": "Dirección de Administracion y Finanzas", "ger": "Gcia. de administración y  finanzas", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "TERUEL, EZEQUIEL MARTIN", "g": "M", "t": "V", "m": "Renuncia", "s": "Adm. Bs. As.", "f": "2026-05-23", "mes": 5, "dir": "Dirección Comercial", "ger": "Sin dato", "bp": "Sin dato"}, {"n": "KEMNITZ, GERARDO ENRIQUE", "g": "M", "t": "V", "m": "Mutuo acuerdo", "s": "Pta. Malagueño", "f": "2026-05-01", "mes": 5, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta malagueño", "bp": "DIMOV, JULIO LUCAS"}, {"n": "ROSALES, HUGO ALBERTO", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Córdoba Norte", "f": "2026-05-01", "mes": 5, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "ROSSETTI, AGUSTIN", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Malagueño", "f": "2026-05-04", "mes": 5, "dir": "Dirección Comercial", "ger": "Sin dato", "bp": "Sin dato"}, {"n": "SORDO, MAXIMILIANO JOSE", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Córdoba Norte", "f": "2026-05-01", "mes": 5, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "ZORZOLI, JULIO CESAR", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Córdoba Norte", "f": "2026-05-01", "mes": 5, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "ACUÑA, GUSTAVO LORENZO", "g": "M", "t": "V", "m": "Renuncia", "s": "Añacua", "f": "2026-05-07", "mes": 5, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "FRANCIONI, LUCIA", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-05-23", "mes": 5, "dir": "Dirección General", "ger": "Gcia. de negocio disensa", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "ASNAL, JULIO PABLO", "g": "M", "t": "V", "m": "Mutuo acuerdo", "s": "Adm. Central MG", "f": "2026-05-30", "mes": 5, "dir": "Dirección Comercial", "ger": "Sin dato", "bp": "Sin dato"}, {"n": "CUFRE, VALERIA", "g": "F", "t": "I", "m": "Despido sin causa", "s": "Pta. Malagueño", "f": "2026-05-16", "mes": 5, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta malagueño", "bp": "DIMOV, JULIO LUCAS"}, {"n": "MORANO, MIGUEL", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Puesto Viejo", "f": "2026-05-02", "mes": 5, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta puesto viejo", "bp": "MARTIN, CARLOS ALBERTO"}, {"n": "ROMERO, HUGO GERMAIN", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Puesto Viejo", "f": "2026-05-01", "mes": 5, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta puesto viejo", "bp": "MARTIN, CARLOS ALBERTO"}, {"n": "ARIAS MARTIN, NICOLAS ALEJANDRO", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Malagueño", "f": "2026-05-01", "mes": 5, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta malagueño", "bp": "DIMOV, JULIO LUCAS"}, {"n": "COLUCCI, MICAELA AGOSTINA", "g": "F", "t": "V", "m": "Renuncia", "s": "Pta. Córdoba Norte", "f": "2026-05-01", "mes": 5, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "MONGE, DIEGO HERNAN", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Córdoba Norte", "f": "2026-05-01", "mes": 5, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "BASUALDO, GUSTAVO SANTOS", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Córdoba Norte", "f": "2026-05-01", "mes": 5, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "AGUERO, RAUL DANIEL", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Capdeville", "f": "2026-06-02", "mes": 6, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta capdeville", "bp": "DEVITA, ANALIA LOURDES"}, {"n": "PERALES SUAREZ, JOSE LUIS", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Malagueño", "f": "2026-06-05", "mes": 6, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta malagueño", "bp": "DIMOV, JULIO LUCAS"}, {"n": "PIZA, WALTER RAMON", "g": "M", "t": "V", "m": "Mutuo acuerdo", "s": "Pta. Puesto Viejo", "f": "2026-06-01", "mes": 6, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta puesto viejo", "bp": "MARTIN, CARLOS ALBERTO"}, {"n": "DELLA VEDOVA, GIULIANA AYLEN", "g": "F", "t": "I", "m": "Fin de contrato", "s": "Pta. Malagueño", "f": "2026-06-08", "mes": 6, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta malagueño", "bp": "DIMOV, JULIO LUCAS"}, {"n": "MERCADO, MATIAS LUIS EZEQUIEL", "g": "M", "t": "V", "m": "Mutuo acuerdo", "s": "Pta. Córdoba Norte", "f": "2026-06-20", "mes": 6, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "REALE LATINI, LUCAS AGUSTIN", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Puesto Viejo", "f": "2026-06-30", "mes": 6, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta puesto viejo", "bp": "MARTIN, CARLOS ALBERTO"}];
+let DATA = DATA_DEFAULT.slice();
+
+const MES_ABR = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const MES_NOM = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+let MESES = [];
+const state = { mes: '', tipo: '', sitio: '', q: '' };
+let PERIOD_LABEL = '';
+
+const MOTIVO_MAP = {
+  'Voluntary: Resignation':            ['Voluntaria', 'Renuncia'],
+  'Voluntary: Individual Mutual S':    ['Voluntaria', 'Mutuo acuerdo'],
+  'Voluntary: Retirement':             ['Voluntaria', 'Jubilación'],
+  'Voluntary: End of contract':        ['Voluntaria', 'Fin de contrato'],
+  'Involuntary: Dismissal with Ca':    ['Involuntaria', 'Despido con causa'],
+  'Involuntary: Dismissal without':    ['Involuntaria', 'Despido sin causa'],
+  'Involuntary: End of contract':      ['Involuntaria', 'Fin de contrato'],
+};
+const SITE_MAP = {
+  'JMCE-PTA. PUESTO VIEJO': 'Pta. Puesto Viejo',
+  'JMCE-PTA. CAPDEVILLE':   'Pta. Capdeville',
+  'JMCE-PTA. CAMPANA':      'Pta. Campana',
+  'JMCE-PTA. MALAGUEÑO':    'Pta. Malagueño',
+  'JMCE-ADM. CENTRAL MG':   'Adm. Central MG',
+  'JMCE-ADM. BS.AS.':       'Adm. Bs. As.',
+  'JMHO-PTA. CÓRDOBA NORTE':'Pta. Córdoba Norte',
+  'JMHO- AÑACUA':           'Añacua',
+  'ECAF-PTA. YOCSINA':      'Pta. Yocsina',
+  'JMAG-AGR. MALAGUEÑO':    'Agr. Malagueño',
+  'ECAF-PTA. CAPDEVILLE':   'Pta. Capdeville (Ecaf)',
+  'ECAF-PUESTO VIEJO':      'Puesto Viejo (Ecaf)',
+  'JMCE-ADM. RESISTENCIA':  'Adm. Resistencia',
+  'JMCE-CBA. CAPITAL':      'Cba. Capital',
+  'JMHO-PTA. CAMPANA':      'Pta. Campana (JMHO)',
+};
+const MES_NUM_MAP = { enero:1, febrero:2, marzo:3, abril:4, mayo:5, junio:6, julio:7, agosto:8, septiembre:9, octubre:10, noviembre:11, diciembre:12 };
+
+function titleDir(raw) {
+  const d = (raw == null ? '' : String(raw)).trim();
+  if (!d) return 'Sin dato';
+  if (!/DIRECCI/i.test(d)) return 'Sin dato';
+  const d2 = d.replace(/DIRECCION/g, 'DIRECCIÓN');
+  const words = d2.toLowerCase().split(' ').filter(w => w.length);
+  const out = words.map((w, i) => (i === 0 || w === 'de' || w === 'y') ? w : w.charAt(0).toUpperCase() + w.slice(1));
+  let res = out.join(' ');
+  if (res) res = res.charAt(0).toUpperCase() + res.slice(1);
+  return res;
+}
+function formatGerencia(raw) {
+  const s = (raw == null ? '' : String(raw)).trim();
+  if (!s) return 'Sin dato';
+  const lowered = s.charAt(0) + s.slice(1).toLowerCase();
+  return lowered.replace(/gerencia/i, 'Gcia.');
+}
+function parseFecha(fechaRaw, mesTxt) {
+  const mesKey = (mesTxt || '').trim().split(' ')[0].toLowerCase();
+  const mesNum = MES_NUM_MAP[mesKey];
+  let month, day, year;
+  if (typeof fechaRaw === 'string' && fechaRaw.includes('/')) {
+    const parts = fechaRaw.trim().split('/');
+    day = parseInt(parts[0], 10); month = parseInt(parts[1], 10); year = parseInt(parts[2], 10);
+  } else if (fechaRaw instanceof Date && !isNaN(fechaRaw)) {
+    const m = fechaRaw.getUTCMonth() + 1, d = fechaRaw.getUTCDate(), y = fechaRaw.getUTCFullYear();
+    if (mesNum && d === mesNum && m !== mesNum) { month = d; day = m; year = y; }
+    else { month = m; day = d; year = y; }
+  } else { return null; }
+  if (mesNum && month !== mesNum) month = mesNum;
+  if (!month || !day || !year) return null;
+  return { month, day, year };
+}
+async function parseExcelFile(file) {
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: 'array', cellDates: true });
+  const sheetName = wb.SheetNames.find(n => n.trim().toUpperCase() === 'BAJAS');
+  if (!sheetName) throw new Error('No se encontró una hoja llamada "BAJAS" en el archivo.');
+  const ws = wb.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
+  if (!rows.length) throw new Error('La hoja BAJAS está vacía.');
+  const header = rows[0].map(h => (h == null ? '' : String(h)).trim());
+  const col = name => header.findIndex(h => h.toLowerCase() === name.toLowerCase());
+  const idx = {
+    cod: col('Empleado (Cod)'), nombre: col('Empleado'), motivo: col('Motivo medida'),
+    div: col('Div Personal'), fecha: col('Fecha Baja'), genero: col('Género'),
+    mes: col('MES'), dir: col('DIRECCION'), ger: col('GERENCIA'), bp: col('BP')
+  };
+  for (const k of ['cod', 'nombre', 'motivo', 'div', 'fecha', 'genero', 'mes']) {
+    if (idx[k] === -1) throw new Error(`Falta la columna requerida "${k}" en la hoja BAJAS.`);
+  }
+  const out = [];
+  let skippedMotivo = 0, skippedFecha = 0;
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r];
+    if (!row) continue;
+    const cod = row[idx.cod], nombre = row[idx.nombre];
+    if (cod == null || cod === '' || !nombre) continue;
+    const motivoRaw = (row[idx.motivo] == null ? '' : String(row[idx.motivo])).trim();
+    const mm = MOTIVO_MAP[motivoRaw];
+    if (!mm) { skippedMotivo++; continue; }
+    const divRaw = (row[idx.div] == null ? '' : String(row[idx.div])).trim();
+    const site = SITE_MAP[divRaw] || divRaw;
+    const mesTxt = (row[idx.mes] == null ? '' : String(row[idx.mes])).trim();
+    const parsed = parseFecha(row[idx.fecha], mesTxt);
+    if (!parsed) { skippedFecha++; continue; }
+    const bp = (row[idx.bp] == null ? '' : String(row[idx.bp])).trim() || 'Sin dato';
+    out.push({
+      n: String(nombre),
+      g: (row[idx.genero] == null ? '' : String(row[idx.genero])).trim() === 'Masculino' ? 'M' : 'F',
+      t: mm[0] === 'Voluntaria' ? 'V' : 'I',
+      m: mm[1], s: site,
+      f: `${parsed.year}-${String(parsed.month).padStart(2, '0')}-${String(parsed.day).padStart(2, '0')}`,
+      mes: parsed.month, dir: titleDir(row[idx.dir]), ger: formatGerencia(row[idx.ger]), bp
+    });
+  }
+  return { records: out, skippedMotivo, skippedFecha };
+}
+
+function monthKeys(records) { return [...new Set(records.map(r => r.f.slice(0, 7)))].sort(); }
+function monthYearLabel(records) {
+  const keys = monthKeys(records);
+  if (!keys.length) return 'Sin datos';
+  const [y1, m1] = keys[0].split('-').map(Number);
+  const [y2, m2] = keys[keys.length - 1].split('-').map(Number);
+  if (y1 === y2) return m1 === m2 ? `${MES_NOM[m1]} ${y1}` : `${MES_NOM[m1]} a ${MES_NOM[m2]} ${y1}`;
+  return `${MES_NOM[m1]} ${y1} a ${MES_NOM[m2]} ${y2}`;
+}
+function monthYearAbbrev(records) {
+  const keys = monthKeys(records);
+  if (!keys.length) return 'sin datos';
+  const [y1, m1] = keys[0].split('-').map(Number);
+  const [y2, m2] = keys[keys.length - 1].split('-').map(Number);
+  const a1 = MES_ABR[m1].toLowerCase(), a2 = MES_ABR[m2].toLowerCase();
+  if (y1 === y2) return m1 === m2 ? `${a1} ${y1}` : `${a1}–${a2} ${y1}`;
+  return `${a1} ${y1}–${a2} ${y2}`;
+}
+function updateMeta() {
+  PERIOD_LABEL = monthYearLabel(DATA);
+  $('header-h1').textContent = `Bajas de personal — ${PERIOD_LABEL}`;
+  const missingDir = DATA.filter(r => r.dir === 'Sin dato').length;
+  const abbrev = monthYearAbbrev(DATA);
+  let txt = `Elaborado a partir de la planilla de bajas (${DATA.length} registro${DATA.length === 1 ? '' : 's'}, ${abbrev}).`;
+  if (missingDir > 0) {
+    txt += ` Nota de calidad de datos: ${missingDir} registro${missingDir === 1 ? '' : 's'} tiene${missingDir === 1 ? '' : 'n'} la columna DIRECCION vacía o mal cargada en la planilla y figura${missingDir === 1 ? '' : 'n'} como “Sin dato”.`;
+  }
+  $('footer-text').textContent = txt;
+}
+function initFiltersAndRender() {
+  MESES = [...new Set(DATA.map(r => r.mes))].sort((a, b) => a - b);
+  $('f-mes').innerHTML = '<option value="">Todos</option>';
+  MESES.forEach(m => $('f-mes').insertAdjacentHTML('beforeend', `<option value="${m}">${MES_NOM[m]}</option>`));
+  $('f-sitio').innerHTML = '<option value="">Todos</option>';
+  [...new Set(DATA.map(r => r.s))].sort((a, b) => a.localeCompare(b, 'es')).forEach(s =>
+    $('f-sitio').insertAdjacentHTML('beforeend', `<option value="${esc(s)}">${esc(s)}</option>`));
+  state.mes = ''; state.tipo = ''; state.sitio = ''; state.q = '';
+  $('f-mes').value = ''; $('f-tipo').value = ''; $('f-sitio').value = ''; $('q').value = '';
+  render();
+}
+['f-mes', 'f-tipo', 'f-sitio'].forEach(id => $(id).addEventListener('change', () => {
+  state.mes = $('f-mes').value; state.tipo = $('f-tipo').value; state.sitio = $('f-sitio').value;
+  render();
+}));
+$('f-clear').addEventListener('click', () => {
+  state.mes = state.tipo = state.sitio = '';
+  $('f-mes').value = $('f-tipo').value = $('f-sitio').value = '';
+  render();
+});
+$('q').addEventListener('input', e => { state.q = e.target.value.trim().toLowerCase(); renderTable(filtered()); });
+function filtered() {
+  return DATA.filter(r =>
+    (!state.mes || r.mes === +state.mes) &&
+    (!state.tipo || r.t === state.tipo) &&
+    (!state.sitio || r.s === state.sitio));
+}
+function renderKPIs(rows) {
+  const total = rows.length;
+  const v = rows.filter(r => r.t === 'V').length;
+  const i = total - v;
+  $('k-total').textContent = total;
+  $('k-total-sub').textContent = total === DATA.length ? PERIOD_LABEL : `de ${DATA.length} en el período`;
+  $('k-vol').textContent = v;
+  $('k-vol-sub').textContent = pct(v, total) + ' del total';
+  $('k-inv').textContent = i;
+  $('k-inv-sub').textContent = pct(i, total) + ' del total';
+  const porMes = countBy(rows, r => r.mes);
+  let pico = null;
+  porMes.forEach((n, m) => { if (!pico || n > pico[1]) pico = [m, n]; });
+  $('k-pico').textContent = pico ? MES_NOM[pico[0]] : '–';
+  $('k-pico-sub').textContent = pico ? `${pico[1]} bajas` : '';
+}
+function renderMes(rows) {
+  const W = 680, H = 250, mL = 30, mR = 8, mT = 26, mB = 24;
+  const iw = W - mL - mR, ih = H - mT - mB;
+  const perMes = MESES.map(m => {
+    const v = rows.filter(r => r.mes === m && r.t === 'V').length;
+    const i = rows.filter(r => r.mes === m && r.t === 'I').length;
+    return { m, v, i, tot: v + i };
+  });
+  const maxTot = Math.max(...perMes.map(d => d.tot), 1);
+  const yMax = Math.max(5, Math.ceil(maxTot / 5) * 5);
+  const y = val => mT + ih - (val / yMax) * ih;
+  const step = iw / MESES.length;
+  const bw = Math.min(52, step * 0.5);
+  const GAP = 2;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Bajas por mes, apiladas por tipo">`;
+  for (let t = 0; t <= yMax; t += 5) {
+    s += `<line x1="${mL}" x2="${W - mR}" y1="${y(t)}" y2="${y(t)}" stroke="${t === 0 ? 'var(--baseline)' : 'var(--grid)'}" stroke-width="1"/>`;
+    s += `<text x="${mL - 6}" y="${y(t) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${t}</text>`;
+  }
+  perMes.forEach((d, idx) => {
+    const cx = mL + step * idx + step / 2;
+    const x = cx - bw / 2;
+    const hV = (d.v / yMax) * ih;
+    const hI = (d.i / yMax) * ih;
+    const yV = y(d.v);
+    const r = 4;
+    if (d.i > 0) {
+      const yI = yV - GAP - hI;
+      const hIc = Math.max(hI - 0, 1.5);
+      s += roundedTop(x, yI, bw, hIc, r, 'var(--i)');
+      if (d.v > 0) s += `<rect x="${x}" y="${yV}" width="${bw}" height="${Math.max(hV, 1.5)}" fill="var(--v)"/>`;
+    } else if (d.v > 0) {
+      s += roundedTop(x, yV, bw, Math.max(hV, 1.5), r, 'var(--v)');
+    }
+    if (d.tot > 0) s += `<text x="${cx}" y="${(d.i > 0 ? yV - GAP - hI : yV) - 6}" text-anchor="middle" font-size="12" fill="var(--ink-2)">${d.tot}</text>`;
+    s += `<text x="${cx}" y="${H - 6}" text-anchor="middle" font-size="11.5" fill="var(--muted)">${MES_ABR[d.m]}</text>`;
+    s += `<rect x="${mL + step * idx}" y="${mT}" width="${step}" height="${ih}" fill="transparent" class="hovcol" data-tip="${esc(`<b>${MES_NOM[d.m]}</b> — ${d.tot} baja${d.tot === 1 ? '' : 's'}<br>Voluntarias: <b>${d.v}</b> · Involuntarias: <b>${d.i}</b>`)}"/>`;
+  });
+  s += '</svg>';
+  $('c-mes').innerHTML = s;
+}
+function roundedTop(x, yy, w, h, r, fill) {
+  r = Math.min(r, h, w / 2);
+  return `<path d="M${x},${yy + h} L${x},${yy + r} Q${x},${yy} ${x + r},${yy} L${x + w - r},${yy} Q${x + w},${yy} ${x + w},${yy + r} L${x + w},${yy + h} Z" fill="${fill}"/>`;
+}
+function renderBajasHBars(el, items, tipLabel) {
+  const max = Math.max(...items.map(d => d.n), 1);
+  el.innerHTML = items.map(d => `
+    <div class="hrow" data-tip="${esc(`<b>${d.label}</b><br>${d.n} baja${d.n === 1 ? '' : 's'} · ${pct(d.n, d.total)} ${tipLabel}`)}">
+      <span class="hl" title="${esc(d.label)}">${esc(d.label)}</span>
+      <span class="track" style="background:transparent"><span class="bar" style="width:${(d.n / max * 100).toFixed(1)}%; left:0; background:${d.color}"></span></span>
+      <span class="hv">${d.n}</span>
+    </div>`).join('');
+}
+function renderMotivo(rows) {
+  const m = new Map();
+  rows.forEach(r => { const k = r.m + '|' + r.t; m.set(k, (m.get(k) || 0) + 1); });
+  const items = [...m.entries()].map(([k, n]) => {
+    const [label, t] = k.split('|');
+    return { label: label + (label === 'Fin de contrato' ? (t === 'V' ? ' (vol.)' : ' (invol.)') : ''), n, total: rows.length, color: t === 'V' ? 'var(--v)' : 'var(--i)' };
+  }).sort((a, b) => b.n - a.n);
+  renderBajasHBars($('c-motivo'), items, 'del total filtrado');
+}
+function renderDim(el, rows, key) {
+  const items = [...countBy(rows, key).entries()]
+    .map(([label, n]) => ({ label, n, total: rows.length, color: 'var(--v)' }))
+    .sort((a, b) => b.n - a.n);
+  renderBajasHBars(el, items, 'del total filtrado');
+}
+function renderGenero(rows) {
+  const m = rows.filter(r => r.g === 'M').length;
+  const f = rows.length - m;
+  const bar = $('c-gen-bar'), leg = $('c-gen-leg');
+  if (!rows.length) { bar.innerHTML = ''; leg.innerHTML = '<span class="row">Sin datos para los filtros actuales.</span>'; return; }
+  bar.innerHTML =
+    (m ? `<div style="flex:${m}; background:var(--v)" data-tip="<b>Masculino</b>: ${m} (${pct(m, rows.length)})"></div>` : '') +
+    (f ? `<div style="flex:${f}; background:var(--i)" data-tip="<b>Femenino</b>: ${f} (${pct(f, rows.length)})"></div>` : '');
+  leg.innerHTML = `
+    <span class="row" style="display:flex;align-items:center;gap:8px;"><span class="sw v"></span>Masculino&nbsp;<b>${m}</b>&nbsp;· ${pct(m, rows.length)}</span>
+    <span class="row" style="display:flex;align-items:center;gap:8px;"><span class="sw i"></span>Femenino&nbsp;<b>${f}</b>&nbsp;· ${pct(f, rows.length)}</span>`;
+}
+function renderTable(rows) {
+  const q = state.q;
+  const list = rows
+    .filter(r => !q || [r.n, r.s, r.dir, r.ger, r.bp, r.m].join(' ').toLowerCase().includes(q))
+    .sort((a, b) => a.f.localeCompare(b.f));
+  $('tbody').innerHTML = list.map(r => {
+    const [y, mo, d] = r.f.split('-');
+    return `<tr>
+      <td>${esc(r.n)}</td><td class="num">${d}/${mo}/${y}</td>
+      <td><span class="pill ${r.t}">${r.t === 'V' ? 'Voluntaria' : 'Involuntaria'}</span></td>
+      <td>${esc(r.m)}</td><td>${esc(r.s)}</td><td>${esc(r.dir)}</td><td>${esc(r.ger)}</td><td>${esc(r.bp)}</td>
+    </tr>`;
+  }).join('');
+  $('tempty').hidden = list.length > 0;
+  $('tcount').textContent = `${list.length} de ${DATA.length} registros`;
+}
+function render() {
+  const rows = filtered();
+  $('f-clear').classList.toggle('on', !!(state.mes || state.tipo || state.sitio));
+  renderKPIs(rows);
+  renderMes(rows);
+  renderMotivo(rows);
+  renderDim($('c-sitio'), rows, r => r.s);
+  renderDim($('c-dir'), rows, r => r.dir);
+  renderGenero(rows);
+  renderTable(rows);
+}
+async function init() {
+  try {
+    const stored = await window.storage.get('bajas-dataset', true);
+    if (stored && stored.value) {
+      const parsed = JSON.parse(stored.value);
+      if (parsed && Array.isArray(parsed.records) && parsed.records.length) {
+        DATA = parsed.records;
+        const fecha = parsed.uploadedAt ? new Date(parsed.uploadedAt).toLocaleString('es-AR') : '';
+        $('upload-status').textContent = `Últimos datos cargados: "${parsed.filename || 'archivo'}"${fecha ? ' · ' + fecha : ''}`;
+        $('upload-status').className = 'upload-status ok';
+      }
+    }
+  } catch (err) {}
+  initFiltersAndRender();
+  updateMeta();
+}
+onChange('file-input', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const statusEl = $('upload-status');
+  statusEl.textContent = 'Procesando archivo…'; statusEl.className = 'upload-status';
+  try {
+    const { records, skippedMotivo, skippedFecha } = await parseExcelFile(file);
+    if (!records.length) throw new Error('No se encontraron registros válidos en la hoja BAJAS.');
+    DATA = records;
+    const uploadedAt = new Date().toISOString();
+    try { await window.storage.set('bajas-dataset', JSON.stringify({ records, uploadedAt, filename: file.name }), true); }
+    catch (err) { throw new Error(`El archivo se procesó pero NO se guardó en el servidor (${err.message}). Los demás usuarios no van a ver este cambio: probá de nuevo.`); }
+    initFiltersAndRender(); updateMeta();
+    let msg = `✓ ${records.length} registros cargados desde "${file.name}".`;
+    if (skippedMotivo) msg += ` ${skippedMotivo} fila(s) con motivo desconocido omitida(s).`;
+    if (skippedFecha) msg += ` ${skippedFecha} fila(s) con fecha inválida omitida(s).`;
+    statusEl.textContent = msg; statusEl.className = 'upload-status ok';
+  } catch (err) { statusEl.textContent = '⚠ ' + err.message; statusEl.className = 'upload-status err'; }
+  e.target.value = '';
+});
+
+/* ================================================================ */
+/* VISTA: COMPARACIÓN HEADCOUNT VS MTP                               */
+/* ================================================================ */
+const MTP_MES_NOM = ['Enero','Febrero','Marzo','Abril','Mayo','Junio'];
+const MTP_MES_ABR = ['Ene','Feb','Mar','Abr','May','Jun'];
+const MTP_PLANT_LABELS = {
+  'CAPDEVILLE': 'Pta. Capdeville', 'CAMPANA': 'Pta. Campana', 'MALAGUEÑO': 'Pta. Malagueño',
+  'PUESTO VIEJO': 'Pta. Puesto Viejo', 'AÑACUA': 'Añacua', 'RMX': 'RMX',
+  'CORPO': 'Corpo', 'AGREGADOS': 'Agregados', 'GEOCYCLE': 'Geocycle',
+};
+
+const MTP_DATA_DEFAULT = [{"planta":"Pta. Capdeville","baseline":148,"real":[174,175,175,173,177,178],"mtp":[174,175,175,173,177,178],"blueprint":153},{"planta":"Pta. Campana","baseline":90,"real":[100,101,100,96,99,99],"mtp":[100,101,100,96,99,99],"blueprint":92},{"planta":"Pta. Malagueño","baseline":222,"real":[269,270,269,268,264,262],"mtp":[269,270,269,268,264,264],"blueprint":159},{"planta":"Pta. Puesto Viejo","baseline":139,"real":[189,189,187,186,182,180],"mtp":[189,189,187,186,182,182],"blueprint":143},{"planta":"Añacua","baseline":8,"real":[13,12,13,12,15,17],"mtp":[13,12,13,12,15,18],"blueprint":null},{"planta":"RMX","baseline":49,"real":[52,55,56,57,60,59],"mtp":[52,55,56,57,60,60],"blueprint":null},{"planta":"Corpo","baseline":200,"real":[156,154,153,151,153,155],"mtp":[156,154,153,151,153,153],"blueprint":null},{"planta":"Agregados","baseline":25,"real":[25,24,24,24,24,25],"mtp":[25,24,24,24,24,26],"blueprint":null},{"planta":"Geocycle","baseline":56,"real":[55,55,54,54,54,53],"mtp":[55,55,54,54,54,54],"blueprint":null}];
+let MTP_DATA = MTP_DATA_DEFAULT.slice();
+const mtpState = { mes: 5, q: '' };
+
+/* Objetivo del bloque general = MTP siempre (todas las plantas), sin usar Blueprint. */
+function mtpObjetivo(p, mi) { return p.mtp[mi] || 0; }
+function mtpTotalsFor(mi) {
+  let real = 0, objetivo = 0, baseline = 0;
+  MTP_DATA.forEach(p => { real += p.real[mi] || 0; objetivo += mtpObjetivo(p, mi); baseline += p.baseline || 0; });
+  return { real, objetivo, baseline, gap: real - objetivo, gapBase: real - baseline };
+}
+function mtpRenderKPIs() {
+  const mi = mtpState.mes;
+  const { real, objetivo, baseline, gap, gapBase } = mtpTotalsFor(mi);
+  $('mtp-k-real').textContent = real;
+  $('mtp-k-real-sub').textContent = MTP_MES_NOM[mi] + ' 2026';
+  const baseEl = $('mtp-k-base');
+  baseEl.textContent = (gapBase > 0 ? '+' : '') + gapBase;
+  baseEl.className = 'val ' + (gapBase >= 0 ? 'pos' : 'neg');
+  $('mtp-k-base-sub').textContent = `vs. ${baseline} al 31/12/25`;
+  const gapEl = $('mtp-k-gap');
+  gapEl.textContent = (gap > 0 ? '+' : '') + gap;
+  gapEl.className = 'val ' + (gap >= 0 ? 'pos' : 'neg');
+  $('mtp-k-gap-sub').textContent = gap >= 0 ? 'headcount por encima del MTP' : 'headcount por debajo del MTP';
+  const pctEl = $('mtp-k-pct');
+  const cumplimiento = objetivo ? Math.round(real / objetivo * 100) : 0;
+  pctEl.textContent = cumplimiento + '%';
+  pctEl.className = 'val ' + (cumplimiento >= 100 ? 'pos' : (cumplimiento >= 97 ? '' : 'neg'));
+  $('mtp-k-pct-sub').textContent = 'Real / MTP — todas las plantas';
+}
+function mtpRenderTrend() {
+  const W = 680, H = 250, mL = 34, mR = 8, mT = 20, mB = 24;
+  const iw = W - mL - mR, ih = H - mT - mB;
+  const perMes = [0, 1, 2, 3, 4, 5].map(mi => mtpTotalsFor(mi));
+  const maxV = Math.max(...perMes.map(d => Math.max(d.real, d.objetivo, d.baseline)), 1);
+  const yMax = Math.ceil(maxV / 50) * 50 || 50;
+  const y = v => mT + ih - (v / yMax) * ih;
+  const step = iw / 6;
+  const px = idx => mL + step * idx + step / 2;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Evolución Real vs MTP vs Línea base por mes">`;
+  for (let t = 0; t <= yMax; t += Math.ceil(yMax / 4 / 50) * 50 || 50) {
+    s += `<line x1="${mL}" x2="${W - mR}" y1="${y(t)}" y2="${y(t)}" stroke="${t === 0 ? 'var(--baseline)' : 'var(--grid)'}" stroke-width="1"/>`;
+    s += `<text x="${mL - 6}" y="${y(t) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${t}</text>`;
+  }
+  function pathFor(key) {
+    let d = '';
+    perMes.forEach((pt, idx) => { d += `${d === '' ? 'M' : 'L'}${px(idx)},${y(pt[key])} `; });
+    return d;
+  }
+  /* Línea base (31/12/25) — constante, se dibuja primero y punteada para no tapar a las otras */
+  s += `<path d="${pathFor('baseline')}" fill="none" stroke="var(--muted)" stroke-width="1.75" stroke-dasharray="6 4"/>`;
+  /* MTP — punteado más corto para distinguirla cuando coincide con el Real */
+  s += `<path d="${pathFor('objetivo')}" fill="none" stroke="var(--v)" stroke-width="3" stroke-dasharray="1 4" stroke-linecap="round"/>`;
+  /* Real — sólida, encima de todo */
+  s += `<path d="${pathFor('real')}" fill="none" stroke="var(--i)" stroke-width="2"/>`;
+  perMes.forEach((pt, idx) => {
+    s += `<circle cx="${px(idx)}" cy="${y(pt.baseline)}" r="2.5" fill="var(--muted)"/>`;
+    s += `<circle cx="${px(idx)}" cy="${y(pt.objetivo)}" r="3" fill="var(--v)"/>`;
+    s += `<circle cx="${px(idx)}" cy="${y(pt.real)}" r="3" fill="var(--i)"/>`;
+    s += `<text x="${px(idx)}" y="${H - 6}" text-anchor="middle" font-size="11.5" fill="var(--muted)">${MTP_MES_ABR[idx]}</text>`;
+    s += `<rect x="${mL + step * idx}" y="${mT}" width="${step}" height="${ih}" fill="transparent" data-tip="${esc(`<b>${MTP_MES_NOM[idx]}</b><br>Real: <b>${pt.real}</b> · MTP: <b>${pt.objetivo}</b> · Línea base: <b>${pt.baseline}</b>`)}"/>`;
+  });
+  s += '</svg>';
+  $('mtp-c-trend').innerHTML = s;
+}
+function mtpRenderBlueprint() {
+  const mi = mtpState.mes;
+  const plants = MTP_DATA.filter(p => p.blueprint != null);
+  const W = 680, H = 260, mL = 34, mR = 8, mT = 24, mB = 30;
+  const iw = W - mL - mR, ih = H - mT - mB;
+  const maxV = Math.max(...plants.flatMap(p => [p.real[mi] || 0, p.blueprint, p.mtp[mi] || 0]), 1);
+  const yMax = Math.ceil(maxV / 20) * 20 || 20;
+  const y = v => mT + ih - (v / yMax) * ih;
+  const step = iw / (plants.length || 1);
+  const groupW = Math.min(140, step * 0.72);
+  const barW = groupW / 3 - 3;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Matriz de brecha Blueprint">`;
+  for (let t = 0; t <= yMax; t += Math.ceil(yMax / 4 / 20) * 20 || 20) {
+    s += `<line x1="${mL}" x2="${W - mR}" y1="${y(t)}" y2="${y(t)}" stroke="${t === 0 ? 'var(--baseline)' : 'var(--grid)'}" stroke-width="1"/>`;
+    s += `<text x="${mL - 6}" y="${y(t) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${t}</text>`;
+  }
+  plants.forEach((p, idx) => {
+    const cx = mL + step * idx + step / 2;
+    const gx = cx - groupW / 2;
+    const real = p.real[mi] || 0, bp = p.blueprint, m = p.mtp[mi] || 0;
+    const tip = esc(`<b>${p.planta}</b><br>Real: <b>${real}</b><br>Blueprint: <b>${bp}</b> (dif: <b>${real - bp > 0 ? '+' : ''}${real - bp}</b>)<br>MTP: <b>${m}</b>`);
+    [['real', real, 'var(--i)'], ['blueprint', bp, '#c0392b'], ['mtp', m, 'var(--v)']].forEach(([k, val, color], bi) => {
+      const bx = gx + bi * (barW + 3);
+      const bh = (val / yMax) * ih;
+      s += `<rect x="${bx}" y="${y(val)}" width="${barW}" height="${Math.max(bh, 1.5)}" rx="2" fill="${color}" data-tip="${tip}"/>`;
+      s += `<text x="${bx + barW / 2}" y="${y(val) - 5}" text-anchor="middle" font-size="10" fill="var(--ink-2)">${val}</text>`;
+    });
+    s += `<text x="${cx}" y="${H - 10}" text-anchor="middle" font-size="11.5" fill="var(--muted)">${esc(p.planta.replace('Pta. ', ''))}</text>`;
+  });
+  s += '</svg>';
+  $('mtp-c-blueprint').innerHTML = s;
+}
+function mtpRenderBlueprintTable() {
+  const mi = mtpState.mes;
+  const plants = MTP_DATA.filter(p => p.blueprint != null);
+  $('mtp-bp-tbody').innerHTML = plants.map(p => {
+    const real = p.real[mi] || 0, mtp = p.mtp[mi] || 0, bp = p.blueprint;
+    const gap = real - bp;
+    const cumpl = bp ? Math.round(real / bp * 100) : 0;
+    return `<tr>
+      <td>${esc(p.planta)}</td>
+      <td class="num">${p.baseline}</td>
+      <td class="num">${real}</td>
+      <td class="num">${mtp}</td>
+      <td class="num">${bp}</td>
+      <td class="num"><span class="pill ${gap >= 0 ? 'pos' : 'neg'}">${gap > 0 ? '+' : ''}${gap}</span></td>
+      <td class="num">${cumpl}%</td>
+    </tr>`;
+  }).join('');
+}
+function mtpRenderEstandar() {
+  const mi = mtpState.mes;
+  const items = MTP_DATA.map(p => {
+    const gap = (p.real[mi] || 0) - (p.mtp[mi] || 0);
+    return { label: p.planta, n: gap, tip: `<b>${esc(p.planta)}</b><br>MTP: <b>${p.mtp[mi] || 0}</b> · Real: <b>${p.real[mi] || 0}</b> · Dif: <b>${gap > 0 ? '+' : ''}${gap}</b>`, color: gap >= 0 ? 'var(--i)' : 'var(--neg)' };
+  }).sort((a, b) => a.n - b.n);
+  renderHBars($('mtp-c-estandar'), items);
+}
+function mtpRenderDist() {
+  const mi = mtpState.mes;
+  const items = MTP_DATA.map(p => ({ label: p.planta, n: p.real[mi] || 0, total: 0, color: 'var(--v)' }))
+    .sort((a, b) => b.n - a.n);
+  const totalReal = items.reduce((a, d) => a + d.n, 0);
+  items.forEach(d => d.total = totalReal);
+  renderBajasHBars($('mtp-c-dist'), items, 'del headcount total');
+}
+function mtpRenderTable() {
+  const mi = mtpState.mes;
+  const q = mtpState.q;
+  const list = MTP_DATA.filter(p => !q || p.planta.toLowerCase().includes(q));
+  $('mtp-tbody').innerHTML = list.map(p => {
+    const real = p.real[mi] || 0, objetivo = mtpObjetivo(p, mi), gap = real - objetivo;
+    const tipo = p.blueprint != null ? 'Blueprint*' : 'Estándar';
+    return `<tr>
+      <td>${esc(p.planta)}</td><td>${tipo}</td>
+      <td class="num">${p.baseline}</td><td class="num">${real}</td><td class="num">${objetivo}</td>
+      <td class="num"><span class="pill ${gap >= 0 ? 'pos' : 'neg'}">${gap > 0 ? '+' : ''}${gap}</span></td>
+    </tr>`;
+  }).join('');
+  $('mtp-tempty').hidden = list.length > 0;
+  $('mtp-tcount').textContent = `${list.length} de ${MTP_DATA.length} plantas`;
+}
+function mtpRenderFooter() {
+  $('mtp-footer-text').textContent = `Elaborado a partir de la planilla de headcount (${MTP_DATA.length} plantas). El % de cumplimiento general (Bloque 1) compara Real vs. MTP para todas las plantas, sin usar Blueprint. Capdeville, Campana, Malagueño y Puesto Viejo (marcadas "Blueprint*" en la tabla) tienen además un valor Blueprint fijo asignado, comparado por separado en el Bloque 2 — esa comparación no modifica el % de cumplimiento general. La "Línea base" corresponde a la dotación al 31/12/2025.`;
+}
+function mtpInitFiltersAndRender() {
+  const lastMi = MTP_MES_NOM.length - 1;
+  mtpState.mes = lastMi; mtpState.q = '';
+  $('mtp-f-mes').innerHTML = MTP_MES_NOM.map((n, i) => `<option value="${i}">${n}</option>`).join('');
+  $('mtp-f-mes').value = lastMi;
+  $('mtp-q').value = '';
+  $('mtp-h1').textContent = `Headcount Real vs MTP — ${MTP_MES_NOM[lastMi]} 2026`;
+  mtpRenderFooter();
+  mtpRender();
+}
+function mtpRender() {
+  mtpRenderKPIs();
+  mtpRenderTrend();
+  mtpRenderBlueprint();
+  mtpRenderBlueprintTable();
+  mtpRenderEstandar();
+  mtpRenderDist();
+  mtpRenderTable();
+}
+$('mtp-f-mes').addEventListener('change', () => {
+  mtpState.mes = +$('mtp-f-mes').value;
+  $('mtp-h1').textContent = `Headcount Real vs MTP — ${MTP_MES_NOM[mtpState.mes]} 2026`;
+  mtpRender();
+});
+$('mtp-q').addEventListener('input', e => { mtpState.q = e.target.value.trim().toLowerCase(); mtpRenderTable(); });
+
+async function mtpParseExcelFile(file) {
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: 'array', cellDates: true });
+  const sheetName = wb.SheetNames.find(n => n.trim().toLowerCase() === 'sheet5') || wb.SheetNames[0];
+  const ws = wb.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
+  if (!rows.length) throw new Error('La hoja está vacía.');
+  const out = [];
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r];
+    if (!row || row[0] == null || String(row[0]).trim() === '') continue;
+    const nameRaw = String(row[0]).trim();
+    const label = MTP_PLANT_LABELS[nameRaw.toUpperCase()] || nameRaw;
+    let baseline = 0, blueprint = null;
+    const real = [], mtp = [];
+    for (let mi = 0; mi < 6; mi++) {
+      const base = 1 + mi * 4;
+      const b = row[base], re_ = row[base + 1], m = row[base + 2], bp = row[base + 3];
+      if (typeof b === 'number') baseline = b;
+      real.push(typeof re_ === 'number' ? re_ : 0);
+      mtp.push(typeof m === 'number' ? m : 0);
+      if (typeof bp === 'number') blueprint = bp;
+    }
+    out.push({ planta: label, baseline, real, mtp, blueprint });
+  }
+  if (!out.length) throw new Error('No se encontraron filas de plantas válidas en la hoja.');
+  return out;
+}
+async function mtpInit() {
+  try {
+    const stored = await window.storage.get('mtp-dataset', true);
+    if (stored && stored.value) {
+      const parsed = JSON.parse(stored.value);
+      if (parsed && Array.isArray(parsed.records) && parsed.records.length) {
+        MTP_DATA = parsed.records;
+        const fecha = parsed.uploadedAt ? new Date(parsed.uploadedAt).toLocaleString('es-AR') : '';
+        $('mtp-upload-status').textContent = `Últimos datos cargados: "${parsed.filename || 'archivo'}"${fecha ? ' · ' + fecha : ''}`;
+        $('mtp-upload-status').className = 'upload-status ok';
+      }
+    }
+  } catch (err) {}
+  mtpInitFiltersAndRender();
+}
+onChange('mtp-file-input', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const statusEl = $('mtp-upload-status');
+  statusEl.textContent = 'Procesando archivo…'; statusEl.className = 'upload-status';
+  try {
+    const records = await mtpParseExcelFile(file);
+    MTP_DATA = records;
+    const uploadedAt = new Date().toISOString();
+    try { await window.storage.set('mtp-dataset', JSON.stringify({ records, uploadedAt, filename: file.name }), true); }
+    catch (err) { throw new Error(`El archivo se procesó pero NO se guardó en el servidor (${err.message}). Los demás usuarios no van a ver este cambio: probá de nuevo.`); }
+    mtpInitFiltersAndRender();
+    statusEl.textContent = `✓ ${records.length} plantas cargadas desde "${file.name}".`;
+    statusEl.className = 'upload-status ok';
+  } catch (err) { statusEl.textContent = '⚠ ' + err.message; statusEl.className = 'upload-status err'; }
+  e.target.value = '';
+});
+
+/* ================================================================ */
+/* VISTA: ALTAS DE PERSONAL                                          */
+/* ================================================================ */
+const ALTAS_DATA_DEFAULT = [{"n":"ESCUDERO, ANGEL LEONARDO","g":"M","mo":"Adquisición","s":"Pta. Capdeville","f":"2026-01-26","mes":1},{"n":"DELAZAR, ROBERTO PABLO","g":"M","mo":"Adquisición","s":"Adm. Central MG","f":"2026-01-26","mes":1},{"n":"COCUCHE, MARIANO GABRIEL","g":"M","mo":"Adquisición","s":"Pta. Malagueño","f":"2026-01-05","mes":1},{"n":"ALONSO, MARIA LUCILA","g":"F","mo":"Reemplazo","s":"Pta. Malagueño","f":"2026-01-05","mes":1},{"n":"RODRIGUEZ, MAXIMILIANO IVAN","g":"M","mo":"Adquisición","s":"Pta. Puesto Viejo","f":"2026-01-19","mes":1},{"n":"CUELLO, LUIS ANIBAL","g":"M","mo":"Adquisición","s":"Pta. Córdoba Norte","f":"2026-01-05","mes":1},{"n":"ATAMPIZ, ANTONIO DANIEL","g":"M","mo":"Adquisición","s":"Pta. Córdoba Norte","f":"2026-01-05","mes":1},{"n":"OTO, GUADALUPE CLARA EUGENIA","g":"F","mo":"Adquisición","s":"Pta. Córdoba Norte","f":"2026-01-20","mes":1},{"n":"PEDROTTI, RICARDO OSCAR","g":"M","mo":"Adquisición","s":"Pta. Córdoba Norte","f":"2026-01-05","mes":1},{"n":"CORNEJO, GONZALO MATIAS","g":"M","mo":"Adquisición","s":"Pta. Córdoba Norte","f":"2026-01-05","mes":1},{"n":"ROMERO, FERNANDO EMIR","g":"M","mo":"Adquisición","s":"Añacua","f":"2026-01-07","mes":1},{"n":"ZARZA, FABIAN GUSTAVO","g":"M","mo":"Adquisición","s":"Añacua","f":"2026-01-09","mes":1},{"n":"ACUÑA, GUSTAVO LORENZO","g":"M","mo":"Adquisición","s":"Añacua","f":"2026-01-09","mes":1},{"n":"VERA, MIGUEL ANTONIO","g":"M","mo":"Adquisición","s":"Añacua","f":"2026-01-15","mes":1},{"n":"ALMIRON, WILFREDO LUIS","g":"M","mo":"Adquisición","s":"Añacua","f":"2026-01-09","mes":1},{"n":"FERRER PETRICCA, LUCIANA","g":"F","mo":"Adquisición","s":"Pta. Capdeville","f":"2026-02-02","mes":2},{"n":"DIAZ, FRANCO DAMIAN","g":"M","mo":"Reemplazo","s":"Pta. Campana","f":"2026-02-09","mes":2},{"n":"SORICHETTI, SANTINO","g":"M","mo":"Adquisición","s":"Adm. Central MG","f":"2026-02-02","mes":2},{"n":"BERNSTEIN, FRANCO DANIEL","g":"M","mo":"Adquisición","s":"Pta. Malagueño","f":"2026-02-02","mes":2},{"n":"MORANO, MIGUEL","g":"M","mo":"Adquisición","s":"Pta. Puesto Viejo","f":"2026-02-02","mes":2},{"n":"BRANCHI, PABLO SAMUEL","g":"M","mo":"Adquisición","s":"Pta. Córdoba Norte","f":"2026-02-02","mes":2},{"n":"DOMINGUEZ, CRISTIAN GABRIEL","g":"M","mo":"Reemplazo","s":"Pta. Córdoba Norte","f":"2026-02-24","mes":2},{"n":"ZABALA, JONATHAN EDUARDO","g":"M","mo":"Adquisición","s":"Pta. Córdoba Norte","f":"2026-02-24","mes":2},{"n":"CABRERA, AXEL ARIEL","g":"M","mo":"Adquisición","s":"Pta. Córdoba Norte","f":"2026-02-11","mes":2},{"n":"CERVETTI, PABLO LUIS","g":"M","mo":"Adquisición","s":"Pta. Capdeville","f":"2026-03-16","mes":3},{"n":"FERREIRA, HERNAN","g":"M","mo":"Adquisición","s":"Pta. Capdeville","f":"2026-03-18","mes":3},{"n":"LARRONDE, SANTIAGO NICOLAS","g":"M","mo":"Adquisición","s":"Pta. Campana","f":"2026-03-16","mes":3},{"n":"LEAL, DAYANA MARIBEL","g":"F","mo":"Adquisición","s":"Adm. Central MG","f":"2026-03-16","mes":3},{"n":"ULLA, MAURO CESAR","g":"M","mo":"Reemplazo","s":"Pta. Córdoba Norte","f":"2026-03-04","mes":3},{"n":"MULLER, WALTER AUGUSTO","g":"M","mo":"Reemplazo","s":"Añacua","f":"2026-03-23","mes":3},{"n":"LOVALLO, AGUSTIN IGNACIO","g":"M","mo":"Reemplazo","s":"Adm. Bs. As.","f":"2026-04-20","mes":4},{"n":"CAMPEOTTO, GONZALO EZEQUIEL","g":"M","mo":"Adquisición","s":"Pta. Capdeville","f":"2026-04-06","mes":4},{"n":"SAUCEDO, ELVIO LEANDRO","g":"M","mo":"Adquisición","s":"Pta. Campana","f":"2026-04-06","mes":4},{"n":"AHUMADA, ANA LAURA","g":"F","mo":"Adquisición","s":"Adm. Central MG","f":"2026-04-01","mes":4},{"n":"QUIÑONEZ, DAIANA MARIEL","g":"F","mo":"Reemplazo","s":"Adm. Central MG","f":"2026-04-20","mes":4},{"n":"LUCERO, DIEGO LUIS","g":"M","mo":"Reemplazo","s":"Pta. Córdoba Norte","f":"2026-04-09","mes":4},{"n":"MUSTAFA, ALI YEN","g":"M","mo":"Reemplazo","s":"Añacua","f":"2026-04-29","mes":4},{"n":"BENITEZ, CARLOS DANIEL","g":"M","mo":"Reemplazo","s":"Añacua","f":"2026-04-29","mes":4},{"n":"ESCOBAR, RAUL ORLANDO","g":"M","mo":"Adquisición","s":"Añacua","f":"2026-04-29","mes":4},{"n":"PERSIA SIVILA, SOFIA ANTONELLA","g":"F","mo":"Adquisición","s":"Pta. Capdeville","f":"2026-05-20","mes":5},{"n":"NANFRO, PABLO JAVIER","g":"M","mo":"Adquisición","s":"Pta. Capdeville","f":"2026-05-04","mes":5},{"n":"CABRERA, CARLOS ALBERTO","g":"M","mo":"Adquisición","s":"Pta. Capdeville","f":"2026-05-04","mes":5},{"n":"NAVARRO, VICTOR ESTEBAN","g":"M","mo":"Adquisición","s":"Pta. Capdeville","f":"2026-05-04","mes":5},{"n":"ARCE, GISELLE TRINIDAD","g":"F","mo":"Adquisición","s":"Pta. Campana","f":"2026-05-18","mes":5},{"n":"D AGOSTINO, DIEGO GIULIANO VALENTIN","g":"M","mo":"Adquisición","s":"Pta. Campana","f":"2026-05-11","mes":5},{"n":"ENRIQUEZ, IGNACIO","g":"M","mo":"Adquisición","s":"Adm. Central MG","f":"2026-05-04","mes":5},{"n":"SEGURA, CAMILA ANABEL","g":"F","mo":"Reemplazo","s":"Adm. Central MG","f":"2026-05-26","mes":5},{"n":"TISSOT, NATALIA YANINA","g":"F","mo":"Reemplazo","s":"Adm. Central MG","f":"2026-05-18","mes":5},{"n":"ZAMPOLINI FERREYRA, NICOLAS","g":"M","mo":"Reemplazo","s":"Adm. Central MG","f":"2026-05-06","mes":5},{"n":"VIDELA, CLAUDIO RUBEN","g":"M","mo":"Reemplazo","s":"Pta. Córdoba Norte","f":"2013-05-17","mes":5},{"n":"SORDO, MAXIMILIANO JOSE","g":"M","mo":"Reemplazo","s":"Pta. Córdoba Norte","f":"2009-05-25","mes":5},{"n":"BASUALDO, GUSTAVO SANTOS","g":"M","mo":"Reemplazo","s":"Pta. Córdoba Norte","f":"2015-05-23","mes":5},{"n":"NOGARO BLASER, ROCIO SUSANA","g":"F","mo":"Adquisición","s":"Pta. Córdoba Norte","f":"2026-05-01","mes":5},{"n":"ROSALES, HUGO ALBERTO","g":"M","mo":"Reemplazo","s":"Pta. Córdoba Norte","f":"1993-05-25","mes":5},{"n":"COLUCCI, MICAELA AGOSTINA","g":"F","mo":"Reemplazo","s":"Pta. Córdoba Norte","f":"2026-05-01","mes":5},{"n":"LAZOS, TOMAS FRANCISCO","g":"M","mo":"Reemplazo","s":"Pta. Córdoba Norte","f":"2026-05-01","mes":5},{"n":"ZORZOLI, JULIO CESAR","g":"M","mo":"Reemplazo","s":"Pta. Córdoba Norte","f":"2009-05-16","mes":5},{"n":"MONGE, DIEGO HERNAN","g":"M","mo":"Reemplazo","s":"Pta. Córdoba Norte","f":"2022-05-06","mes":5},{"n":"PERALDI, ANGEL EZEQUIEL","g":"M","mo":"Reemplazo","s":"Pta. Yocsina","f":"2026-05-22","mes":5},{"n":"PRETZEL, FERNANDO MARTIN","g":"M","mo":"Adquisición","s":"Añacua","f":"2026-05-28","mes":5},{"n":"SOSA, BENJAMIN ALEXANDER","g":"M","mo":"Adquisición","s":"Pta. Capdeville","f":"2026-06-01","mes":6},{"n":"MOYANO, MARIA CANDELA","g":"F","mo":"Adquisición","s":"Pta. Capdeville","f":"2026-06-01","mes":6},{"n":"VILLEGAS ROVELLA, JULIA","g":"F","mo":"Reemplazo","s":"Adm. Central MG","f":"2026-06-01","mes":6},{"n":"DEPETRIS, JUAN EMILIO","g":"M","mo":"Reemplazo","s":"Agr. Malagueño","f":"2026-06-03","mes":6},{"n":"MARIÑO, MARIANELA MACARENA","g":"M","mo":"Adquisición","s":"Añacua","f":"2026-06-26","mes":6},{"n":"CESPEDES, HERNAN RUDY","g":"M","mo":"Adquisición","s":"Añacua","f":"2026-06-10","mes":6},{"n":"LOPEZ, BRUNO EZEQUIEL","g":"M","mo":"Adquisición","s":"Añacua","f":"2026-06-11","mes":6},{"n":"SOSA, BENJAMIN ALEXANDER","g":"M","mo":"Adquisición","s":"Pta. Capdeville","f":"2026-06-01","mes":6},{"n":"MOYANO, MARIA CANDELA","g":"F","mo":"Adquisición","s":"Pta. Capdeville","f":"2026-06-01","mes":6},{"n":"VILLEGAS ROVELLA, JULIA","g":"F","mo":"Reemplazo","s":"Adm. Central MG","f":"2026-06-01","mes":6},{"n":"DEPETRIS, JUAN EMILIO","g":"M","mo":"Reemplazo","s":"Agr. Malagueño","f":"2026-06-03","mes":6},{"n":"MARIÑO, MARIANELA MACARENA","g":"M","mo":"Adquisición","s":"Añacua","f":"2026-06-26","mes":6},{"n":"CESPEDES, HERNAN RUDY","g":"M","mo":"Adquisición","s":"Añacua","f":"2026-06-10","mes":6},{"n":"LOPEZ, BRUNO EZEQUIEL","g":"M","mo":"Adquisición","s":"Añacua","f":"2026-06-11","mes":6}];
+let ALTAS_DATA = ALTAS_DATA_DEFAULT.slice();
+let ALTAS_MESES = [];
+
+/* Base "Nómina al 31 de enero 2026" por planta (tabla dinámica provista por Ana) — punto de partida
+   para la evolución de % de mujeres; a esto se le suman las altas acumuladas mes a mes. */
+const NOMINA_ENERO_MAP = {
+  'Pta. Capdeville (Ecaf)': { f: 0,  m: 3,   tot: 3 },
+  'Pta. Yocsina':           { f: 11, m: 38,  tot: 49 },
+  'Puesto Viejo (Ecaf)':    { f: 0,  m: 1,   tot: 1 },
+  'Agr. Malagueño':         { f: 3,  m: 20,  tot: 23 },
+  'Adm. Bs. As.':           { f: 0,  m: 2,   tot: 2 },
+  'Adm. Central MG':        { f: 78, m: 88,  tot: 166 },
+  'Adm. Resistencia':       { f: 1,  m: 1,   tot: 2 },
+  'Cba. Capital':           { f: 2,  m: 9,   tot: 11 },
+  'Pta. Campana':           { f: 14, m: 81,  tot: 95 },
+  'Pta. Capdeville':        { f: 20, m: 136, tot: 156 },
+  'Pta. Malagueño':         { f: 45, m: 222, tot: 267 },
+  'Pta. Puesto Viejo':      { f: 20, m: 166, tot: 186 },
+  'Añacua':                 { f: 1,  m: 12,  tot: 13 },
+  'Pta. Campana (JMHO)':    { f: 1,  m: 6,   tot: 7 },
+  'Pta. Córdoba Norte':     { f: 8,  m: 45,  tot: 53 },
+};
+const NOMINA_ENERO_TOTAL = Object.values(NOMINA_ENERO_MAP).reduce(
+  (acc, v) => ({ f: acc.f + v.f, m: acc.m + v.m, tot: acc.tot + v.tot }), { f: 0, m: 0, tot: 0 });
+
+/* Nómina real por planta y género para febrero-junio 2026 (pivots "NOMINA <MES>" de la hoja ALTAS).
+   Reemplaza la estimación por altas−bajas: esto es la dotación real cerrada de cada mes. */
+const NOMINA_MENSUAL_MAP = {"2":{"Pta. Capdeville (Ecaf)":{"f":0,"m":3,"tot":3},"Pta. Yocsina":{"f":11,"m":38,"tot":49},"Puesto Viejo (Ecaf)":{"f":0,"m":1,"tot":1},"Agr. Malagueño":{"f":3,"m":20,"tot":23},"Adm. Bs. As.":{"f":0,"m":2,"tot":2},"Adm. Central MG":{"f":75,"m":88,"tot":163},"Adm. Resistencia":{"f":1,"m":1,"tot":2},"Cba. Capital":{"f":2,"m":8,"tot":10},"Pta. Campana":{"f":14,"m":82,"tot":96},"Pta. Capdeville":{"f":20,"m":136,"tot":156},"Pta. Malagueño":{"f":45,"m":223,"tot":268},"Pta. Puesto Viejo":{"f":20,"m":167,"tot":187},"Añacua":{"f":1,"m":11,"tot":12},"Pta. Campana (JMHO)":{"f":1,"m":6,"tot":7},"Pta. Córdoba Norte":{"f":8,"m":48,"tot":56}},"3":{"Pta. Capdeville (Ecaf)":{"f":0,"m":3,"tot":3},"Pta. Yocsina":{"f":11,"m":37,"tot":48},"Puesto Viejo (Ecaf)":{"f":0,"m":1,"tot":1},"Agr. Malagueño":{"f":3,"m":20,"tot":23},"Adm. Bs. As.":{"f":0,"m":1,"tot":1},"Adm. Central MG":{"f":75,"m":88,"tot":163},"Adm. Resistencia":{"f":1,"m":1,"tot":2},"Cba. Capital":{"f":2,"m":8,"tot":10},"Pta. Campana":{"f":14,"m":81,"tot":95},"Pta. Capdeville":{"f":19,"m":137,"tot":156},"Pta. Malagueño":{"f":44,"m":223,"tot":267},"Pta. Puesto Viejo":{"f":19,"m":166,"tot":185},"Añacua":{"f":1,"m":12,"tot":13},"Pta. Campana (JMHO)":{"f":1,"m":6,"tot":7},"Pta. Córdoba Norte":{"f":8,"m":49,"tot":57}},"4":{"Pta. Capdeville (Ecaf)":{"f":0,"m":3,"tot":3},"Pta. Yocsina":{"f":11,"m":37,"tot":48},"Puesto Viejo (Ecaf)":{"f":0,"m":1,"tot":1},"Agr. Malagueño":{"f":3,"m":20,"tot":23},"Adm. Bs. As.":{"f":0,"m":2,"tot":2},"Adm. Central MG":{"f":76,"m":89,"tot":165},"Adm. Resistencia":{"f":1,"m":1,"tot":2},"Cba. Capital":{"f":2,"m":8,"tot":10},"Pta. Campana":{"f":14,"m":79,"tot":93},"Pta. Capdeville":{"f":19,"m":136,"tot":155},"Pta. Malagueño":{"f":43,"m":221,"tot":264},"Pta. Puesto Viejo":{"f":19,"m":165,"tot":184},"Añacua":{"f":1,"m":14,"tot":15},"Pta. Campana (JMHO)":{"f":1,"m":6,"tot":7},"Pta. Córdoba Norte":{"f":8,"m":50,"tot":58}},"5":{"Pta. Capdeville (Ecaf)":{"f":0,"m":3,"tot":3},"Pta. Yocsina":{"f":10,"m":38,"tot":48},"Puesto Viejo (Ecaf)":{"f":0,"m":1,"tot":1},"Agr. Malagueño":{"f":3,"m":20,"tot":23},"Adm. Bs. As.":{"f":0,"m":1,"tot":1},"Adm. Central MG":{"f":76,"m":90,"tot":166},"Adm. Resistencia":{"f":1,"m":1,"tot":2},"Cba. Capital":{"f":2,"m":8,"tot":10},"Pta. Campana":{"f":15,"m":80,"tot":95},"Pta. Capdeville":{"f":20,"m":139,"tot":159},"Pta. Malagueño":{"f":43,"m":217,"tot":260},"Pta. Puesto Viejo":{"f":19,"m":160,"tot":179},"Añacua":{"f":1,"m":14,"tot":15},"Pta. Campana (JMHO)":{"f":1,"m":6,"tot":7},"Pta. Córdoba Norte":{"f":8,"m":51,"tot":59}},"6":{"Pta. Capdeville (Ecaf)":{"f":0,"m":3,"tot":3},"Pta. Yocsina":{"f":9,"m":38,"tot":47},"Puesto Viejo (Ecaf)":{"f":0,"m":1,"tot":1},"Agr. Malagueño":{"f":3,"m":21,"tot":24},"Adm. Bs. As.":{"f":0,"m":1,"tot":1},"Adm. Central MG":{"f":78,"m":91,"tot":169},"Adm. Resistencia":{"f":1,"m":1,"tot":2},"Cba. Capital":{"f":2,"m":8,"tot":10},"Pta. Campana":{"f":15,"m":80,"tot":95},"Pta. Capdeville":{"f":21,"m":138,"tot":159},"Pta. Malagueño":{"f":42,"m":216,"tot":258},"Pta. Puesto Viejo":{"f":19,"m":158,"tot":177},"Añacua":{"f":1,"m":17,"tot":18},"Pta. Campana (JMHO)":{"f":1,"m":6,"tot":7},"Pta. Córdoba Norte":{"f":8,"m":50,"tot":58}}};
+function altasNominaFor(mi, site) {
+  if (mi === 1) return site ? (NOMINA_ENERO_MAP[site] || { f: 0, m: 0, tot: 0 }) : NOMINA_ENERO_TOTAL;
+  const monthData = NOMINA_MENSUAL_MAP[mi] || {};
+  if (!site) {
+    return Object.values(monthData).reduce((acc, v) => ({ f: acc.f + v.f, m: acc.m + v.m, tot: acc.tot + v.tot }), { f: 0, m: 0, tot: 0 });
+  }
+  return monthData[site] || { f: 0, m: 0, tot: 0 };
+}
+
+const altasState = { mes: '', sitio: '', genero: '', q: '' };
+let ALTAS_PERIOD_LABEL = '';
+
+/* reutiliza SITE_MAP y parseFecha ya definidos en la vista de Bajas */
+async function parseAltasFile(file) {
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: 'array', cellDates: true });
+  const sheetName = wb.SheetNames.find(n => n.trim().toUpperCase() === 'ALTAS');
+  if (!sheetName) throw new Error('No se encontró una hoja llamada "ALTAS" en el archivo.');
+  const ws = wb.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
+  if (!rows.length) throw new Error('La hoja ALTAS está vacía.');
+  const header = rows[0].map(h => (h == null ? '' : String(h)).trim());
+  const col = name => header.findIndex(h => h.toLowerCase() === name.toLowerCase());
+  const idx = {
+    cod: col('Empleado (Cod)'), nombre: col('Empleado'), fecha: col('Empleado (Ingreso)'),
+    mes: col('Mes'), div: col('Div Personal'), genero: col('Género'), motivo: col('Motivo medida')
+  };
+  for (const k of ['cod', 'nombre', 'fecha', 'mes', 'div', 'genero']) {
+    if (idx[k] === -1) throw new Error(`Falta la columna requerida "${k}" en la hoja ALTAS.`);
+  }
+  const out = [];
+  let skippedFecha = 0;
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r];
+    if (!row) continue;
+    const cod = row[idx.cod], nombre = row[idx.nombre];
+    if (cod == null || cod === '' || !nombre) continue;
+    const mesTxt = (row[idx.mes] == null ? '' : String(row[idx.mes])).trim();
+    const parsed = parseFecha(row[idx.fecha], mesTxt);
+    if (!parsed) { skippedFecha++; continue; }
+    const divRaw = (row[idx.div] == null ? '' : String(row[idx.div])).trim();
+    const site = SITE_MAP[divRaw] || divRaw || 'Sin dato';
+    out.push({
+      n: String(nombre),
+      g: (row[idx.genero] == null ? '' : String(row[idx.genero])).trim() === 'Masculino' ? 'M' : 'F',
+      mo: idx.motivo > -1 && row[idx.motivo] != null ? String(row[idx.motivo]).trim() : 'Sin dato',
+      s: site,
+      f: `${parsed.year}-${String(parsed.month).padStart(2, '0')}-${String(parsed.day).padStart(2, '0')}`,
+      mes: parsed.month
+    });
+  }
+  return { records: out, skippedFecha };
+}
+
+function altasMonthYearLabel(records) {
+  /* Usa el campo "mes" (siempre referido a 2026) en vez de la fecha completa: algunos ingresos
+     corresponden a colaboradores que ya estaban en la empresa y cambiaron de puesto este año,
+     por lo que su fecha de ingreso original puede ser de años anteriores. */
+  if (!records.length) return 'Sin datos';
+  const meses = [...new Set(records.map(r => r.mes))].sort((a, b) => a - b);
+  const m1 = meses[0], m2 = meses[meses.length - 1];
+  return m1 === m2 ? `${MES_NOM[m1]} 2026` : `${MES_NOM[m1]} a ${MES_NOM[m2]} 2026`;
+}
+function altasUpdateMeta() {
+  ALTAS_PERIOD_LABEL = altasMonthYearLabel(ALTAS_DATA);
+  $('altas-h1').textContent = `Altas de personal — ${ALTAS_PERIOD_LABEL}`;
+  $('altas-footer-text').textContent = `Elaborado a partir de la planilla de altas (${ALTAS_DATA.length} registro${ALTAS_DATA.length === 1 ? '' : 's'}). Algunos registros corresponden a colaboradores que ya estaban en la empresa y cambiaron de puesto durante 2026; su fecha de ingreso original puede ser de años anteriores.`;
+}
+function altasInitFiltersAndRender() {
+  ALTAS_MESES = [...new Set(ALTAS_DATA.map(r => r.mes))].sort((a, b) => a - b);
+  $('altas-f-mes').innerHTML = '<option value="">Todos</option>';
+  ALTAS_MESES.forEach(m => $('altas-f-mes').insertAdjacentHTML('beforeend', `<option value="${m}">${MES_NOM[m]}</option>`));
+  $('altas-f-sitio').innerHTML = '<option value="">Todos</option>';
+  [...new Set(ALTAS_DATA.map(r => r.s))].sort((a, b) => a.localeCompare(b, 'es')).forEach(s =>
+    $('altas-f-sitio').insertAdjacentHTML('beforeend', `<option value="${esc(s)}">${esc(s)}</option>`));
+  altasState.mes = ''; altasState.sitio = ''; altasState.genero = ''; altasState.q = '';
+  $('altas-f-mes').value = ''; $('altas-f-sitio').value = ''; $('altas-f-genero').value = ''; $('altas-q').value = '';
+  altasRender();
+}
+['altas-f-mes', 'altas-f-sitio', 'altas-f-genero'].forEach(id => $(id).addEventListener('change', () => {
+  altasState.mes = $('altas-f-mes').value; altasState.sitio = $('altas-f-sitio').value; altasState.genero = $('altas-f-genero').value;
+  altasRender();
+}));
+$('altas-f-clear').addEventListener('click', () => {
+  altasState.mes = altasState.sitio = altasState.genero = '';
+  $('altas-f-mes').value = $('altas-f-sitio').value = $('altas-f-genero').value = '';
+  altasRender();
+});
+$('altas-q').addEventListener('input', e => { altasState.q = e.target.value.trim().toLowerCase(); altasRenderTable(altasFiltered()); });
+
+function altasFiltered() {
+  return ALTAS_DATA.filter(r =>
+    (!altasState.mes || r.mes === +altasState.mes) &&
+    (!altasState.sitio || r.s === altasState.sitio) &&
+    (!altasState.genero || r.g === altasState.genero));
+}
+/* filtro solo por mes+sitio (sin género), usado para el gráfico de diversidad y la comparación de género por planta */
+function altasFilteredNoGenero() {
+  return ALTAS_DATA.filter(r =>
+    (!altasState.mes || r.mes === +altasState.mes) &&
+    (!altasState.sitio || r.s === altasState.sitio));
+}
+/* filtro solo por sitio (ignora mes y género) — para reconstruir la serie mensual completa de un sitio */
+function altasFilteredBySiteOnly(site) {
+  return ALTAS_DATA.filter(r => !site || r.s === site);
+}
+/* bajas (usa el array DATA de la vista de Bajas, ya cargado en el mismo script) filtradas por sitio */
+function bajasFilteredBySiteOnly(site) {
+  return DATA.filter(r => !site || r.s === site);
+}
+
+function altasRenderKPIs(rows) {
+  const total = rows.length;
+  const f = rows.filter(r => r.g === 'F').length;
+  const m = total - f;
+  $('altas-k-total').textContent = total;
+  $('altas-k-total-sub').textContent = total === ALTAS_DATA.length ? ALTAS_PERIOD_LABEL : `de ${ALTAS_DATA.length} en el período`;
+  $('altas-k-f').textContent = f;
+  $('altas-k-f-sub').textContent = pct(f, total) + ' del total';
+  $('altas-k-m').textContent = m;
+  $('altas-k-m-sub').textContent = pct(m, total) + ' del total';
+  const porMes = countBy(rows, r => r.mes);
+  let pico = null;
+  porMes.forEach((n, mi) => { if (!pico || n > pico[1]) pico = [mi, n]; });
+  $('altas-k-pico').textContent = pico ? MES_NOM[pico[0]] : '–';
+  $('altas-k-pico-sub').textContent = pico ? `${pico[1]} altas` : '';
+}
+function altasRenderMes(rows) {
+  const W = 680, H = 250, mL = 30, mR = 8, mT = 26, mB = 24;
+  const iw = W - mL - mR, ih = H - mT - mB;
+  const perMes = ALTAS_MESES.map(mi => {
+    const m = rows.filter(r => r.mes === mi && r.g === 'M').length;
+    const f = rows.filter(r => r.mes === mi && r.g === 'F').length;
+    return { mi, m, f, tot: m + f };
+  });
+  const maxTot = Math.max(...perMes.map(d => d.tot), 1);
+  const yMax = Math.max(5, Math.ceil(maxTot / 5) * 5);
+  const y = val => mT + ih - (val / yMax) * ih;
+  const step = iw / (ALTAS_MESES.length || 1);
+  const bw = Math.min(52, step * 0.5);
+  const GAP = 2;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Altas por mes, apiladas por género">`;
+  for (let t = 0; t <= yMax; t += 5) {
+    s += `<line x1="${mL}" x2="${W - mR}" y1="${y(t)}" y2="${y(t)}" stroke="${t === 0 ? 'var(--baseline)' : 'var(--grid)'}" stroke-width="1"/>`;
+    s += `<text x="${mL - 6}" y="${y(t) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${t}</text>`;
+  }
+  perMes.forEach((d, idx) => {
+    const cx = mL + step * idx + step / 2;
+    const x = cx - bw / 2;
+    const hM = (d.m / yMax) * ih;
+    const hF = (d.f / yMax) * ih;
+    const yM = y(d.m);
+    const r = 4;
+    if (d.f > 0) {
+      const yF = yM - GAP - hF;
+      const hFc = Math.max(hF - 0, 1.5);
+      s += roundedTop(x, yF, bw, hFc, r, 'var(--i)');
+      if (d.m > 0) s += `<rect x="${x}" y="${yM}" width="${bw}" height="${Math.max(hM, 1.5)}" fill="var(--v)"/>`;
+    } else if (d.m > 0) {
+      s += roundedTop(x, yM, bw, Math.max(hM, 1.5), r, 'var(--v)');
+    }
+    if (d.tot > 0) s += `<text x="${cx}" y="${(d.f > 0 ? yM - GAP - hF : yM) - 6}" text-anchor="middle" font-size="12" fill="var(--ink-2)">${d.tot}</text>`;
+    s += `<text x="${cx}" y="${H - 6}" text-anchor="middle" font-size="11.5" fill="var(--muted)">${MES_ABR[d.mi]}</text>`;
+    s += `<rect x="${mL + step * idx}" y="${mT}" width="${step}" height="${ih}" fill="transparent" data-tip="${esc(`<b>${MES_NOM[d.mi]}</b> — ${d.tot} alta${d.tot === 1 ? '' : 's'}<br>Masculino: <b>${d.m}</b> · Femenino: <b>${d.f}</b>`)}"/>`;
+  });
+  s += '</svg>';
+  $('altas-c-mes').innerHTML = s;
+}
+function altasRenderSitio(rows) {
+  const items = [...countBy(rows, r => r.s).entries()]
+    .map(([label, n]) => ({ label, n, total: rows.length, color: 'var(--v)' }))
+    .sort((a, b) => b.n - a.n);
+  renderBajasHBars($('altas-c-sitio'), items, 'del total filtrado');
+}
+function altasRenderGeneroPorSitio(rows) {
+  const m = new Map();
+  rows.forEach(r => {
+    const cur = m.get(r.s) || { f: 0, m: 0 };
+    if (r.g === 'F') cur.f++; else cur.m++;
+    m.set(r.s, cur);
+  });
+  const items = [...m.entries()].map(([label, v]) => ({ label, f: v.f, m: v.m, total: v.f + v.m }))
+    .sort((a, b) => b.total - a.total);
+  const max = Math.max(...items.map(d => d.total), 1);
+  $('altas-c-genero-sitio').innerHTML = items.map(d => {
+    const wF = (d.f / max * 100).toFixed(1), wM = (d.m / max * 100).toFixed(1);
+    return `
+    <div class="hrow" data-tip="${esc(`<b>${d.label}</b><br>Femenino: <b>${d.f}</b> · Masculino: <b>${d.m}</b> · Total: <b>${d.total}</b>`)}">
+      <span class="hl" title="${esc(d.label)}">${esc(d.label)}</span>
+      <span class="track"><span class="bar" style="width:${wF}%; left:0; background:var(--i)"></span><span class="bar" style="width:${wM}%; left:${wF}%; background:var(--v)"></span></span>
+      <span class="hv">${d.total}</span>
+    </div>`;
+  }).join('');
+}
+function altasDiversidadSerie(site) {
+  /* Serie mensual de % mujeres para un sitio (o compañía completa si site es '' ), usando la
+     dotación real cerrada de cada mes (nómina al 31/1 y pivots reales de nómina feb-jun) — ya no
+     es una estimación por altas menos bajas, es el headcount real de cada cierre mensual. */
+  const meses = ALTAS_MESES.length ? ALTAS_MESES : [1];
+  return meses.map(mi => {
+    const d = altasNominaFor(mi, site);
+    return { mi, f: d.f, tot: d.tot, pctF: d.tot ? (d.f / d.tot * 100) : null };
+  });
+}
+function altasRenderDiversidad() {
+  /* Small multiples: un mini-gráfico por planta en vez de todas las líneas superpuestas — mismo dato
+     (base nómina enero + altas acumuladas), mucho más fácil de leer de un vistazo. */
+  const sites = Object.keys(NOMINA_ENERO_MAP).sort((a, b) => NOMINA_ENERO_MAP[b].tot - NOMINA_ENERO_MAP[a].tot);
+  const total = altasDiversidadSerie('');
+  const entries = [{ label: 'Total compañía', pts: total, isTotal: true }, ...sites.map(site => ({ label: site, pts: altasDiversidadSerie(site), isTotal: false }))];
+
+  function miniCard({ label, pts, isTotal }) {
+    const W = 150, H = 46, pad = 4;
+    const first = pts.find(p => p.pctF != null);
+    const last = [...pts].reverse().find(p => p.pctF != null);
+    const cur = last ? Math.round(last.pctF) : null;
+    const ene = first ? Math.round(first.pctF) : null;
+    const delta = (cur != null && ene != null) ? cur - ene : null;
+    const trendColor = delta == null ? 'var(--muted)' : (delta >= 0 ? 'var(--i)' : 'var(--neg)');
+    const yMax = 100;
+    const y = v => pad + (H - 2 * pad) - (v / yMax) * (H - 2 * pad);
+    const step = (W - 2 * pad) / (pts.length - 1 || 1);
+    const px = idx => pad + step * idx;
+    let d = '';
+    pts.forEach((pt, idx) => { if (pt.pctF != null) { d += `${d === '' ? 'M' : 'L'}${px(idx)},${y(pt.pctF)} `; } });
+    let dots = '';
+    pts.forEach((pt, idx) => {
+      if (pt.pctF == null) return;
+      dots += `<circle cx="${px(idx)}" cy="${y(pt.pctF)}" r="2" fill="${trendColor}" data-tip="${esc(`<b>${label}</b> — ${MES_NOM[pt.mi]}<br>% mujeres: <b>${Math.round(pt.pctF)}%</b> (${pt.f} de ${pt.tot})`)}"/>`;
+    });
+    const svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" role="img" aria-label="Trayectoria de % mujeres — ${esc(label)}">
+      <line x1="${pad}" x2="${W - pad}" y1="${y(50)}" y2="${y(50)}" stroke="var(--grid)" stroke-width="1" stroke-dasharray="2 2"/>
+      <path d="${d}" fill="none" stroke="${trendColor}" stroke-width="1.8"/>
+      ${dots}
+    </svg>`;
+    const deltaTxt = delta == null ? '' : `<span style="color:${delta >= 0 ? 'var(--i)' : 'var(--neg)'};">${delta > 0 ? '+' : ''}${delta} p.p. vs. ene.</span>`;
+    return `<div style="border:1px solid var(--border); border-radius:8px; padding:8px 10px; background:var(--surface); ${isTotal ? 'border-color:var(--ink);' : ''}">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; gap:6px;">
+        <span style="font-size:11.5px; font-weight:${isTotal ? 700 : 600}; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${esc(label)}">${esc(label)}</span>
+        <span style="font-size:13px; font-weight:700; color:var(--ink);">${cur != null ? cur + '%' : '–'}</span>
+      </div>
+      ${svg}
+      <div style="font-size:10.5px; color:var(--muted); margin-top:2px;">${deltaTxt}</div>
+    </div>`;
+  }
+
+  $('altas-c-diversidad').innerHTML =
+    `<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px;">${entries.map(miniCard).join('')}</div>`;
+  $('altas-div-legend').innerHTML =
+    `<span>Cada mini-gráfico va de 0% a 100%; la línea punteada marca el 50%. Color verde = subió respecto a enero, rojo = bajó.</span>`;
+}
+function altasRenderDiversidadTabla() {
+  const lastMi = ALTAS_MESES.length ? ALTAS_MESES[ALTAS_MESES.length - 1] : 1;
+  const hastaMi = altasState.mes ? +altasState.mes : lastMi;
+  ['altas-div-mes-lbl', 'altas-div-mes-lbl2', 'altas-div-mes-lbl3', 'altas-div-mes-lbl4'].forEach(id => { $(id).textContent = MES_ABR[hastaMi]; });
+  const sites = Object.keys(NOMINA_ENERO_MAP).sort((a, b) => a.localeCompare(b, 'es'));
+  const rowsHtml = sites.map(site => {
+    const base = NOMINA_ENERO_MAP[site];
+    const pctEne = base.tot ? (base.f / base.tot * 100) : null;
+    const rowsSite = altasFilteredBySiteOnly(site).filter(r => r.mes > 1 && r.mes <= hastaMi);
+    const bajasSite = bajasFilteredBySiteOnly(site).filter(r => r.mes > 1 && r.mes <= hastaMi);
+    const altasF = rowsSite.filter(r => r.g === 'F').length;
+    const altasM = rowsSite.filter(r => r.g === 'M').length;
+    const bajasF = bajasSite.filter(r => r.g === 'F').length;
+    const bajasM = bajasSite.filter(r => r.g === 'M').length;
+    /* dotación y % actual: nómina real del mes seleccionado (no una estimación por altas-bajas) */
+    const cur = altasNominaFor(hastaMi, site);
+    const pctCur = cur.tot ? (cur.f / cur.tot * 100) : null;
+    const delta = (pctEne != null && pctCur != null) ? (pctCur - pctEne) : null;
+    return `<tr>
+      <td>${esc(site)}</td>
+      <td class="num">${base.tot}</td>
+      <td class="num">${pctEne != null ? Math.round(pctEne) + '%' : '–'}</td>
+      <td class="num">${altasF}</td>
+      <td class="num">${altasM}</td>
+      <td class="num">${bajasF}</td>
+      <td class="num">${bajasM}</td>
+      <td class="num">${cur.tot}</td>
+      <td class="num">${pctCur != null ? Math.round(pctCur) + '%' : '–'}</td>
+      <td class="num">${delta != null ? `<span class="pill ${delta >= 0 ? 'pos' : 'neg'}">${delta > 0 ? '+' : ''}${delta.toFixed(1)}</span>` : '–'}</td>
+    </tr>`;
+  }).join('');
+  $('altas-div-tbody').innerHTML = rowsHtml;
+}
+function altasRenderTable(rows) {
+  const q = altasState.q;
+  const list = rows
+    .filter(r => !q || [r.n, r.s].join(' ').toLowerCase().includes(q))
+    .sort((a, b) => a.f.localeCompare(b.f));
+  $('altas-tbody').innerHTML = list.map(r => {
+    const [y, mo, d] = r.f.split('-');
+    return `<tr>
+      <td>${esc(r.n)}</td><td class="num">${d}/${mo}/${y}</td>
+      <td><span class="pill ${r.g === 'F' ? 'I' : 'V'}">${r.g === 'F' ? 'Femenino' : 'Masculino'}</span></td>
+      <td>${esc(r.mo)}</td><td>${esc(r.s)}</td>
+    </tr>`;
+  }).join('');
+  $('altas-tempty').hidden = list.length > 0;
+  $('altas-tcount').textContent = `${list.length} de ${ALTAS_DATA.length} registros`;
+}
+function altasRender() {
+  const rows = altasFiltered();
+  const rowsNoGenero = altasFilteredNoGenero();
+  $('altas-f-clear').classList.toggle('on', !!(altasState.mes || altasState.sitio || altasState.genero));
+  altasRenderKPIs(rows);
+  altasRenderMes(rows);
+  altasRenderSitio(rows);
+  altasRenderGeneroPorSitio(rowsNoGenero);
+  altasRenderDiversidad();
+  altasRenderDiversidadTabla();
+  altasRenderTable(rows);
+}
+async function altasInit() {
+  try {
+    const stored = await window.storage.get('altas-dataset', true);
+    if (stored && stored.value) {
+      const parsed = JSON.parse(stored.value);
+      if (parsed && Array.isArray(parsed.records) && parsed.records.length) {
+        ALTAS_DATA = parsed.records;
+        const fecha = parsed.uploadedAt ? new Date(parsed.uploadedAt).toLocaleString('es-AR') : '';
+        $('altas-upload-status').textContent = `Últimos datos cargados: "${parsed.filename || 'archivo'}"${fecha ? ' · ' + fecha : ''}`;
+        $('altas-upload-status').className = 'upload-status ok';
+      }
+    }
+  } catch (err) {}
+  altasInitFiltersAndRender();
+  altasUpdateMeta();
+}
+onChange('altas-file-input', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const statusEl = $('altas-upload-status');
+  statusEl.textContent = 'Procesando archivo…'; statusEl.className = 'upload-status';
+  try {
+    const { records, skippedFecha } = await parseAltasFile(file);
+    if (!records.length) throw new Error('No se encontraron registros válidos en la hoja ALTAS.');
+    ALTAS_DATA = records;
+    const uploadedAt = new Date().toISOString();
+    try { await window.storage.set('altas-dataset', JSON.stringify({ records, uploadedAt, filename: file.name }), true); }
+    catch (err) { throw new Error(`El archivo se procesó pero NO se guardó en el servidor (${err.message}). Los demás usuarios no van a ver este cambio: probá de nuevo.`); }
+    altasInitFiltersAndRender(); altasUpdateMeta();
+    let msg = `✓ ${records.length} registros cargados desde "${file.name}".`;
+    if (skippedFecha) msg += ` ${skippedFecha} fila(s) con fecha inválida omitida(s).`;
+    statusEl.textContent = msg; statusEl.className = 'upload-status ok';
+  } catch (err) { statusEl.textContent = '⚠ ' + err.message; statusEl.className = 'upload-status err'; }
+  e.target.value = '';
+});
+
+/* ----- tabs ----- */
+function showTab(tab) {
+  $('view-bajas').hidden = tab !== 'bajas';
+  $('view-mtp').hidden = tab !== 'mtp';
+  $('view-altas').hidden = tab !== 'altas';
+  $('tab-btn-bajas').classList.toggle('active', tab === 'bajas');
+  $('tab-btn-mtp').classList.toggle('active', tab === 'mtp');
+  $('tab-btn-altas').classList.toggle('active', tab === 'altas');
+  $('tab-btn-bajas').setAttribute('aria-selected', tab === 'bajas');
+  $('tab-btn-mtp').setAttribute('aria-selected', tab === 'mtp');
+  $('tab-btn-altas').setAttribute('aria-selected', tab === 'altas');
+}
+$('tab-btn-bajas').addEventListener('click', () => showTab('bajas'));
+$('tab-btn-mtp').addEventListener('click', () => showTab('mtp'));
+$('tab-btn-altas').addEventListener('click', () => showTab('altas'));
+
+init();
+mtpInit();
+altasInit();
+</script>
+</body>
+</html>

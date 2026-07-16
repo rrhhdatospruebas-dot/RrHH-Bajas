@@ -91,14 +91,24 @@
   </div>
 
   <div class="card">
-    <h2>Hoja de datos</h2>
-    <p class="hint">El dashboard lee esta hoja de Google Sheets. Pegá la URL completa o solo el ID. La hoja tiene que estar compartida como “Cualquier persona con el enlace: Lector”.</p>
-    <form method="post" action="/admin/hoja">
-      <label>ID o URL de la hoja
-        <input type="text" name="sheet" value="<%= sheetId %>" required>
-      </label>
-      <button class="btn" type="submit">Guardar hoja</button>
-    </form>
+    <h2>Datos cargados</h2>
+    <p class="hint">Los Excel se cargan desde cada pestaña del panel (botón “Cargar nuevo Excel”, visible solo para administradores) y quedan guardados en la base de datos para todos los usuarios.</p>
+    <table>
+      <thead><tr><th>Pestaña</th><th>Archivo</th><th>Última carga</th></tr></thead>
+      <tbody>
+        <% datasets.forEach(function (d) { %>
+        <tr>
+          <td><strong><%= d.label %></strong></td>
+          <% if (d.fila) { %>
+          <td><%= (d.fila.valor && d.fila.valor.filename) || '—' %></td>
+          <td><%= new Date(d.fila.actualizado_en).toLocaleString('es-AR') %></td>
+          <% } else { %>
+          <td colspan="2" style="color:var(--muted)">Sin cargas — se muestran los datos iniciales embebidos</td>
+          <% } %>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
   </div>
 
   <div class="card">

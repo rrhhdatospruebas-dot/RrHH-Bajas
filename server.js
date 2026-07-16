@@ -10,6 +10,7 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.set('trust proxy', 1); // Vercel corre detrás de un proxy
 app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: '10mb' })); // datasets del Excel parseados en el navegador
 
 app.use(
   cookieSession({
@@ -66,15 +67,44 @@ app.post('/logout', (req, res) => {
   res.redirect('/login');
 });
 
-/* ---------- dashboard ---------- */
+/* ---------- panel (bajas / headcount vs MTP / altas) ---------- */
 
-app.get('/', requiereLogin, async (req, res) => {
-  const sheetId = await db.getConfig('sheet_id', process.env.SHEET_ID || '');
-  res.render('dashboard', {
-    sheetId,
+app.get('/', requiereLogin, (req, res) => {
+  res.render('panel', {
     usuario: req.session.usuario,
     esAdmin: req.session.esAdmin,
   });
+});
+
+/* ---------- datos de los Excel (persistidos en la base) ---------- */
+
+// El panel parsea el Excel en el navegador y guarda/lee el JSON acá
+const DATASETS_VALIDOS = ['bajas-dataset', 'mtp-dataset', 'altas-dataset'];
+
+function claveValida(req, res, next) {
+  if (DATASETS_VALIDOS.includes(req.params.clave)) return next();
+  res.status(404).json({ error: 'Dataset desconocido' });
+}
+
+// Cualquier usuario logueado puede leer los datos
+app.get('/api/datos/:clave', requiereLogin, claveValida, async (req, res) => {
+  const fila = await db.getDataset(req.params.clave);
+  res.json({ value: fila ? JSON.stringify(fila.valor) : null });
+});
+
+// Solo administradores pueden reemplazar los datos
+app.put('/api/datos/:clave', requiereAdmin, claveValida, async (req, res) => {
+  let parsed;
+  try {
+    parsed = JSON.parse(req.body.value);
+  } catch (_) {
+    return res.status(400).json({ error: 'El cuerpo debe traer "value" con JSON válido.' });
+  }
+  if (!parsed || !Array.isArray(parsed.records) || !parsed.records.length) {
+    return res.status(400).json({ error: 'El dataset debe tener registros.' });
+  }
+  await db.setDataset(req.params.clave, parsed);
+  res.json({ ok: true });
 });
 
 /* ---------- administración ---------- */
@@ -89,29 +119,30 @@ function urlPublica(req) {
   return `${req.protocol}://${req.get('host')}`;
 }
 
+const DATASET_LABELS = {
+  'bajas-dataset': 'Bajas de personal',
+  'mtp-dataset': 'Headcount vs MTP',
+  'altas-dataset': 'Altas de personal',
+};
+
 app.get('/admin', requiereAdmin, async (req, res) => {
-  const [sheetId, usuarios] = await Promise.all([
-    db.getConfig('sheet_id', process.env.SHEET_ID || ''),
+  const [usuarios, ...filas] = await Promise.all([
     db.listarUsuarios(),
+    ...DATASETS_VALIDOS.map((c) => db.getDataset(c)),
   ]);
+  const datasets = DATASETS_VALIDOS.map((clave, i) => ({
+    clave,
+    label: DATASET_LABELS[clave],
+    fila: filas[i], // null si nunca se subió un Excel (se usan los datos embebidos)
+  }));
   res.render('admin', {
-    sheetId,
     usuarios,
+    datasets,
     usuario: req.session.usuario,
     mensaje: req.query.ok || null,
     error: req.query.error || null,
     urlPublica: urlPublica(req),
   });
-});
-
-// Cambiar la hoja de datos: acepta el ID o la URL completa del Sheet
-app.post('/admin/hoja', requiereAdmin, async (req, res) => {
-  const entrada = (req.body.sheet || '').trim();
-  const m = entrada.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  const id = m ? m[1] : entrada;
-  if (!id) return res.redirect('/admin?error=' + encodeURIComponent('Ingresá el ID o la URL de la hoja.'));
-  await db.setConfig('sheet_id', id);
-  res.redirect('/admin?ok=' + encodeURIComponent('Hoja de datos actualizada.'));
 });
 
 app.post('/admin/usuarios', requiereAdmin, async (req, res) => {

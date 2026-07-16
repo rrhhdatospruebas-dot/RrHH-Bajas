@@ -31,6 +31,13 @@ async function init() {
       valor TEXT NOT NULL
     );
   `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS datasets (
+      clave          TEXT PRIMARY KEY,
+      valor          JSONB NOT NULL,
+      actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
 
   const { rows } = await pool.query('SELECT COUNT(*)::int AS n FROM usuarios');
   if (rows[0].n === 0) {
@@ -59,6 +66,22 @@ async function setConfig(clave, valor) {
   await pool.query(
     `INSERT INTO config (clave, valor) VALUES ($1, $2)
      ON CONFLICT (clave) DO UPDATE SET valor = EXCLUDED.valor`,
+    [clave, valor]
+  );
+}
+
+async function getDataset(clave) {
+  const { rows } = await pool.query(
+    'SELECT valor, actualizado_en FROM datasets WHERE clave = $1',
+    [clave]
+  );
+  return rows[0] || null;
+}
+
+async function setDataset(clave, valor) {
+  await pool.query(
+    `INSERT INTO datasets (clave, valor, actualizado_en) VALUES ($1, $2, now())
+     ON CONFLICT (clave) DO UPDATE SET valor = EXCLUDED.valor, actualizado_en = now()`,
     [clave, valor]
   );
 }
@@ -98,6 +121,8 @@ module.exports = {
   listo,
   getConfig,
   setConfig,
+  getDataset,
+  setDataset,
   buscarUsuario,
   listarUsuarios,
   crearUsuario,
