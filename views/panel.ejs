@@ -141,10 +141,10 @@
   .card .hint { font-size: 12px; color: var(--muted); margin: 1px 0 12px; }
   .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 
-  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--ink-2); }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--ink-2); }
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
   .sw { width: 10px; height: 10px; border-radius: 3px; flex: none; }
-  .sw.v { background: var(--v); } .sw.i { background: var(--i); } .sw.n { background: var(--neg); }
+  .sw.v { background: var(--v); } .sw.i { background: var(--i); } .sw.s { background: var(--muted); } .sw.n { background: var(--neg); }
   .sw.line { width: 14px; height: 3px; border-radius: 2px; }
 
   /* ---------- section-divider dentro de la pestaña MTP ---------- */
@@ -190,6 +190,7 @@
   .pill { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 99px; color: var(--ink); }
   .pill.V { background: color-mix(in srgb, var(--v) 18%, transparent); }
   .pill.I { background: color-mix(in srgb, var(--i) 22%, transparent); }
+  .pill.S { background: color-mix(in srgb, var(--muted) 22%, transparent); }
   .pill.pos { background: color-mix(in srgb, var(--i) 20%, transparent); color: var(--i); }
   .pill.neg { background: color-mix(in srgb, var(--neg) 18%, transparent); color: var(--neg); }
   .empty { padding: 24px; text-align: center; color: var(--muted); }
@@ -254,6 +255,7 @@
           <option value="">Todos</option>
           <option value="V">Voluntaria</option>
           <option value="I">Involuntaria</option>
+          <option value="S">Sin definir</option>
         </select>
       </label>
       <label>Sitio <select id="f-sitio"><option value="">Todos</option></select></label>
@@ -271,7 +273,7 @@
       <div class="card full">
         <div class="card-head">
           <div><h2>Bajas por mes</h2><div class="hint">Apiladas por tipo de baja</div></div>
-          <div class="legend"><span><span class="sw v"></span>Voluntaria</span><span><span class="sw i"></span>Involuntaria</span></div>
+          <div class="legend"><span><span class="sw v"></span>Voluntaria</span><span><span class="sw i"></span>Involuntaria</span><span><span class="sw s"></span>Sin definir</span></div>
         </div>
         <div class="chart-mes" id="c-mes"></div>
       </div>
@@ -480,14 +482,14 @@
 
       <div class="card full">
         <div class="card-head">
-          <div><h2>Evolución de % de mujeres en altas</h2><div class="hint">Trayectoria mes a mes por Div Personal — dotación real de cierre informada en el Excel</div></div>
+          <div><h2>Evolución de % de mujeres en altas</h2><div class="hint">Trayectoria mes a mes de cada planta — dotación real de cierre de cada mes (nómina enero + nóminas reales feb-jun)</div></div>
         </div>
         <div class="chart-mes" id="altas-c-diversidad"></div>
         <div id="altas-div-legend" style="display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:10px;font-size:12px;color:var(--ink-2);"></div>
         <div class="tblwrap" style="margin-top:14px;">
           <table>
             <thead><tr>
-              <th>Div Personal</th><th>Dotación Ene (Total)</th><th>% mujeres Ene</th>
+              <th>Planta</th><th>Dotación Ene (Total)</th><th>% mujeres Ene</th>
               <th>Altas Fem. (Feb→<span id="altas-div-mes-lbl">Jun</span>)</th>
               <th>Altas Masc. (Feb→<span id="altas-div-mes-lbl2">Jun</span>)</th>
               <th>Bajas Fem. (Feb→<span id="altas-div-mes-lbl3">Jun</span>)</th>
@@ -604,14 +606,18 @@ const state = { mes: '', tipo: '', sitio: '', q: '' };
 let PERIOD_LABEL = '';
 
 const MOTIVO_MAP = {
-  'Voluntary: Resignation':            ['Voluntaria', 'Renuncia'],
-  'Voluntary: Individual Mutual S':    ['Voluntaria', 'Mutuo acuerdo'],
-  'Voluntary: Retirement':             ['Voluntaria', 'Jubilación'],
-  'Voluntary: End of contract':        ['Voluntaria', 'Fin de contrato'],
-  'Involuntary: Dismissal with Ca':    ['Involuntaria', 'Despido con causa'],
-  'Involuntary: Dismissal without':    ['Involuntaria', 'Despido sin causa'],
-  'Involuntary: End of contract':      ['Involuntaria', 'Fin de contrato'],
+  'Voluntary: Resignation':            ['V', 'Renuncia'],
+  'Voluntary: Individual Mutual S':    ['V', 'Mutuo acuerdo'],
+  'Voluntary: Retirement':             ['V', 'Jubilación'],
+  'Voluntary: End of contract':        ['V', 'Fin de contrato'],
+  'Voluntary: Abandonment of Empl':    ['V', 'Abandono de trabajo'],
+  'Involuntary: Dismissal with Ca':    ['I', 'Despido con causa'],
+  'Involuntary: Dismissal without':    ['I', 'Despido sin causa'],
+  'Involuntary: End of contract':      ['I', 'Fin de contrato'],
+  'Involuntary: Death':                ['I', 'Fallecimiento'],
+  'Indefinido':                        ['S', 'Sin definir'],
 };
+const TIPO_LABEL = { V: 'Voluntaria', I: 'Involuntaria', S: 'Sin definir' };
 const SITE_MAP = {
   'JMCE-PTA. PUESTO VIEJO': 'Pta. Puesto Viejo',
   'JMCE-PTA. CAPDEVILLE':   'Pta. Capdeville',
@@ -648,6 +654,12 @@ function formatGerencia(raw) {
   const lowered = s.charAt(0) + s.slice(1).toLowerCase();
   return lowered.replace(/gerencia/i, 'Gcia.');
 }
+function parseMotivo(raw) {
+  if (MOTIVO_MAP[raw]) return MOTIVO_MAP[raw];
+  if (/^Voluntary:/i.test(raw)) return ['V', raw];
+  if (/^Involuntary:/i.test(raw)) return ['I', raw];
+  return ['S', raw || 'Sin definir'];
+}
 function parseFecha(fechaRaw, mesTxt) {
   const mesKey = (mesTxt || '').trim().split(' ')[0].toLowerCase();
   const mesNum = MES_NUM_MAP[mesKey];
@@ -683,15 +695,16 @@ async function parseExcelFile(file) {
     if (idx[k] === -1) throw new Error(`Falta la columna requerida "${k}" en la hoja BAJAS.`);
   }
   const out = [];
-  let skippedMotivo = 0, skippedFecha = 0;
+  let skippedIdentity = 0, skippedFecha = 0, unclassifiedMotivo = 0;
   for (let r = 1; r < rows.length; r++) {
     const row = rows[r];
     if (!row) continue;
     const cod = row[idx.cod], nombre = row[idx.nombre];
-    if (cod == null || cod === '' || !nombre) continue;
+    if ((cod == null || cod === '') && !nombre) continue;
+    if (cod == null || cod === '' || !nombre) { skippedIdentity++; continue; }
     const motivoRaw = (row[idx.motivo] == null ? '' : String(row[idx.motivo])).trim();
-    const mm = MOTIVO_MAP[motivoRaw];
-    if (!mm) { skippedMotivo++; continue; }
+    const mm = parseMotivo(motivoRaw);
+    if (mm[0] === 'S') unclassifiedMotivo++;
     const divRaw = (row[idx.div] == null ? '' : String(row[idx.div])).trim();
     const site = SITE_MAP[divRaw] || divRaw;
     const mesTxt = (row[idx.mes] == null ? '' : String(row[idx.mes])).trim();
@@ -701,13 +714,13 @@ async function parseExcelFile(file) {
     out.push({
       n: String(nombre),
       g: (row[idx.genero] == null ? '' : String(row[idx.genero])).trim() === 'Masculino' ? 'M' : 'F',
-      t: mm[0] === 'Voluntaria' ? 'V' : 'I',
+      t: mm[0],
       m: mm[1], s: site,
       f: `${parsed.year}-${String(parsed.month).padStart(2, '0')}-${String(parsed.day).padStart(2, '0')}`,
       mes: parsed.month, dir: titleDir(row[idx.dir]), ger: formatGerencia(row[idx.ger]), bp
     });
   }
-  return { records: out, skippedMotivo, skippedFecha };
+  return { records: out, skippedIdentity, skippedFecha, unclassifiedMotivo };
 }
 
 function monthKeys(records) { return [...new Set(records.map(r => r.f.slice(0, 7)))].sort(); }
@@ -732,11 +745,13 @@ function updateMeta() {
   PERIOD_LABEL = monthYearLabel(DATA);
   $('header-h1').textContent = `Bajas de personal — ${PERIOD_LABEL}`;
   const missingDir = DATA.filter(r => r.dir === 'Sin dato').length;
+  const unclassified = DATA.filter(r => r.t === 'S').length;
   const abbrev = monthYearAbbrev(DATA);
   let txt = `Elaborado a partir de la planilla de bajas (${DATA.length} registro${DATA.length === 1 ? '' : 's'}, ${abbrev}).`;
   if (missingDir > 0) {
     txt += ` Nota de calidad de datos: ${missingDir} registro${missingDir === 1 ? '' : 's'} tiene${missingDir === 1 ? '' : 'n'} la columna DIRECCION vacía o mal cargada en la planilla y figura${missingDir === 1 ? '' : 'n'} como “Sin dato”.`;
   }
+  if (unclassified > 0) txt += ` ${unclassified} baja${unclassified === 1 ? '' : 's'} queda${unclassified === 1 ? '' : 'n'} como “Sin definir” porque la planilla no indica el tipo.`;
   $('footer-text').textContent = txt;
 }
 function initFiltersAndRender() {
@@ -769,9 +784,10 @@ function filtered() {
 function renderKPIs(rows) {
   const total = rows.length;
   const v = rows.filter(r => r.t === 'V').length;
-  const i = total - v;
+  const i = rows.filter(r => r.t === 'I').length;
+  const s = total - v - i;
   $('k-total').textContent = total;
-  $('k-total-sub').textContent = total === DATA.length ? PERIOD_LABEL : `de ${DATA.length} en el período`;
+  $('k-total-sub').textContent = (total === DATA.length ? PERIOD_LABEL : `de ${DATA.length} en el período`) + (s ? ` · ${s} sin definir` : '');
   $('k-vol').textContent = v;
   $('k-vol-sub').textContent = pct(v, total) + ' del total';
   $('k-inv').textContent = i;
@@ -788,7 +804,8 @@ function renderMes(rows) {
   const perMes = MESES.map(m => {
     const v = rows.filter(r => r.mes === m && r.t === 'V').length;
     const i = rows.filter(r => r.mes === m && r.t === 'I').length;
-    return { m, v, i, tot: v + i };
+    const s = rows.filter(r => r.mes === m && r.t === 'S').length;
+    return { m, v, i, s, tot: v + i + s };
   });
   const maxTot = Math.max(...perMes.map(d => d.tot), 1);
   const yMax = Math.max(5, Math.ceil(maxTot / 5) * 5);
@@ -804,21 +821,23 @@ function renderMes(rows) {
   perMes.forEach((d, idx) => {
     const cx = mL + step * idx + step / 2;
     const x = cx - bw / 2;
-    const hV = (d.v / yMax) * ih;
-    const hI = (d.i / yMax) * ih;
-    const yV = y(d.v);
     const r = 4;
-    if (d.i > 0) {
-      const yI = yV - GAP - hI;
-      const hIc = Math.max(hI - 0, 1.5);
-      s += roundedTop(x, yI, bw, hIc, r, 'var(--i)');
-      if (d.v > 0) s += `<rect x="${x}" y="${yV}" width="${bw}" height="${Math.max(hV, 1.5)}" fill="var(--v)"/>`;
-    } else if (d.v > 0) {
-      s += roundedTop(x, yV, bw, Math.max(hV, 1.5), r, 'var(--v)');
-    }
-    if (d.tot > 0) s += `<text x="${cx}" y="${(d.i > 0 ? yV - GAP - hI : yV) - 6}" text-anchor="middle" font-size="12" fill="var(--ink-2)">${d.tot}</text>`;
+    const segments = [
+      { n: d.v, color: 'var(--v)' },
+      { n: d.i, color: 'var(--i)' },
+      { n: d.s, color: 'var(--muted)' },
+    ].filter(segment => segment.n > 0);
+    let top = mT + ih;
+    segments.forEach((segment, segmentIndex) => {
+      const h = Math.max((segment.n / yMax) * ih, 1.5);
+      top -= h;
+      if (segmentIndex === segments.length - 1) s += roundedTop(x, top, bw, h, r, segment.color);
+      else s += `<rect x="${x}" y="${top}" width="${bw}" height="${h}" fill="${segment.color}"/>`;
+      if (segmentIndex < segments.length - 1) top -= GAP;
+    });
+    if (d.tot > 0) s += `<text x="${cx}" y="${top - 6}" text-anchor="middle" font-size="12" fill="var(--ink-2)">${d.tot}</text>`;
     s += `<text x="${cx}" y="${H - 6}" text-anchor="middle" font-size="11.5" fill="var(--muted)">${MES_ABR[d.m]}</text>`;
-    s += `<rect x="${mL + step * idx}" y="${mT}" width="${step}" height="${ih}" fill="transparent" class="hovcol" data-tip="${esc(`<b>${MES_NOM[d.m]}</b> — ${d.tot} baja${d.tot === 1 ? '' : 's'}<br>Voluntarias: <b>${d.v}</b> · Involuntarias: <b>${d.i}</b>`)}"/>`;
+    s += `<rect x="${mL + step * idx}" y="${mT}" width="${step}" height="${ih}" fill="transparent" class="hovcol" data-tip="${esc(`<b>${MES_NOM[d.m]}</b> — ${d.tot} baja${d.tot === 1 ? '' : 's'}<br>Voluntarias: <b>${d.v}</b> · Involuntarias: <b>${d.i}</b> · Sin definir: <b>${d.s}</b>`)}"/>`;
   });
   s += '</svg>';
   $('c-mes').innerHTML = s;
@@ -841,7 +860,7 @@ function renderMotivo(rows) {
   rows.forEach(r => { const k = r.m + '|' + r.t; m.set(k, (m.get(k) || 0) + 1); });
   const items = [...m.entries()].map(([k, n]) => {
     const [label, t] = k.split('|');
-    return { label: label + (label === 'Fin de contrato' ? (t === 'V' ? ' (vol.)' : ' (invol.)') : ''), n, total: rows.length, color: t === 'V' ? 'var(--v)' : 'var(--i)' };
+    return { label: label + (label === 'Fin de contrato' ? (t === 'V' ? ' (vol.)' : ' (invol.)') : ''), n, total: rows.length, color: t === 'V' ? 'var(--v)' : t === 'I' ? 'var(--i)' : 'var(--muted)' };
   }).sort((a, b) => b.n - a.n);
   renderBajasHBars($('c-motivo'), items, 'del total filtrado');
 }
@@ -872,7 +891,7 @@ function renderTable(rows) {
     const [y, mo, d] = r.f.split('-');
     return `<tr>
       <td>${esc(r.n)}</td><td class="num">${d}/${mo}/${y}</td>
-      <td><span class="pill ${r.t}">${r.t === 'V' ? 'Voluntaria' : 'Involuntaria'}</span></td>
+      <td><span class="pill ${r.t}">${TIPO_LABEL[r.t] || 'Sin definir'}</span></td>
       <td>${esc(r.m)}</td><td>${esc(r.s)}</td><td>${esc(r.dir)}</td><td>${esc(r.ger)}</td><td>${esc(r.bp)}</td>
     </tr>`;
   }).join('');
@@ -912,16 +931,18 @@ onChange('file-input', async (e) => {
   const statusEl = $('upload-status');
   statusEl.textContent = 'Procesando archivo…'; statusEl.className = 'upload-status';
   try {
-    const { records, skippedMotivo, skippedFecha } = await parseExcelFile(file);
+    const { records, skippedIdentity, skippedFecha, unclassifiedMotivo } = await parseExcelFile(file);
     if (!records.length) throw new Error('No se encontraron registros válidos en la hoja BAJAS.');
+    if (skippedIdentity || skippedFecha) {
+      throw new Error(`No se actualizó el panel: ${skippedIdentity + skippedFecha} fila(s) incompleta(s) (${skippedIdentity} sin empleado/código y ${skippedFecha} con fecha inválida). Corregí esas filas y volvé a cargar el archivo.`);
+    }
     DATA = records;
     const uploadedAt = new Date().toISOString();
     try { await window.storage.set('bajas-dataset', JSON.stringify({ records, uploadedAt, filename: file.name }), true); }
     catch (err) { throw new Error(`El archivo se procesó pero NO se guardó en el servidor (${err.message}). Los demás usuarios no van a ver este cambio: probá de nuevo.`); }
     initFiltersAndRender(); updateMeta();
     let msg = `✓ ${records.length} registros cargados desde "${file.name}".`;
-    if (skippedMotivo) msg += ` ${skippedMotivo} fila(s) con motivo desconocido omitida(s).`;
-    if (skippedFecha) msg += ` ${skippedFecha} fila(s) con fecha inválida omitida(s).`;
+    if (unclassifiedMotivo) msg += ` ${unclassifiedMotivo} fila(s) incluida(s) como “Sin definir”.`;
     statusEl.textContent = msg; statusEl.className = 'upload-status ok';
   } catch (err) { statusEl.textContent = '⚠ ' + err.message; statusEl.className = 'upload-status err'; }
   e.target.value = '';
@@ -1201,25 +1222,19 @@ const NOMINA_ENERO_MAP = {
   'Pta. Campana (JMHO)':    { f: 1,  m: 6,   tot: 7 },
   'Pta. Córdoba Norte':     { f: 8,  m: 45,  tot: 53 },
 };
+const NOMINA_ENERO_TOTAL = Object.values(NOMINA_ENERO_MAP).reduce(
+  (acc, v) => ({ f: acc.f + v.f, m: acc.m + v.m, tot: acc.tot + v.tot }), { f: 0, m: 0, tot: 0 });
+
 /* Nómina real por planta y género para febrero-junio 2026 (pivots "NOMINA <MES>" de la hoja ALTAS).
    Reemplaza la estimación por altas−bajas: esto es la dotación real cerrada de cada mes. */
 const NOMINA_MENSUAL_MAP = {"2":{"Pta. Capdeville (Ecaf)":{"f":0,"m":3,"tot":3},"Pta. Yocsina":{"f":11,"m":38,"tot":49},"Puesto Viejo (Ecaf)":{"f":0,"m":1,"tot":1},"Agr. Malagueño":{"f":3,"m":20,"tot":23},"Adm. Bs. As.":{"f":0,"m":2,"tot":2},"Adm. Central MG":{"f":75,"m":88,"tot":163},"Adm. Resistencia":{"f":1,"m":1,"tot":2},"Cba. Capital":{"f":2,"m":8,"tot":10},"Pta. Campana":{"f":14,"m":82,"tot":96},"Pta. Capdeville":{"f":20,"m":136,"tot":156},"Pta. Malagueño":{"f":45,"m":223,"tot":268},"Pta. Puesto Viejo":{"f":20,"m":167,"tot":187},"Añacua":{"f":1,"m":11,"tot":12},"Pta. Campana (JMHO)":{"f":1,"m":6,"tot":7},"Pta. Córdoba Norte":{"f":8,"m":48,"tot":56}},"3":{"Pta. Capdeville (Ecaf)":{"f":0,"m":3,"tot":3},"Pta. Yocsina":{"f":11,"m":37,"tot":48},"Puesto Viejo (Ecaf)":{"f":0,"m":1,"tot":1},"Agr. Malagueño":{"f":3,"m":20,"tot":23},"Adm. Bs. As.":{"f":0,"m":1,"tot":1},"Adm. Central MG":{"f":75,"m":88,"tot":163},"Adm. Resistencia":{"f":1,"m":1,"tot":2},"Cba. Capital":{"f":2,"m":8,"tot":10},"Pta. Campana":{"f":14,"m":81,"tot":95},"Pta. Capdeville":{"f":19,"m":137,"tot":156},"Pta. Malagueño":{"f":44,"m":223,"tot":267},"Pta. Puesto Viejo":{"f":19,"m":166,"tot":185},"Añacua":{"f":1,"m":12,"tot":13},"Pta. Campana (JMHO)":{"f":1,"m":6,"tot":7},"Pta. Córdoba Norte":{"f":8,"m":49,"tot":57}},"4":{"Pta. Capdeville (Ecaf)":{"f":0,"m":3,"tot":3},"Pta. Yocsina":{"f":11,"m":37,"tot":48},"Puesto Viejo (Ecaf)":{"f":0,"m":1,"tot":1},"Agr. Malagueño":{"f":3,"m":20,"tot":23},"Adm. Bs. As.":{"f":0,"m":2,"tot":2},"Adm. Central MG":{"f":76,"m":89,"tot":165},"Adm. Resistencia":{"f":1,"m":1,"tot":2},"Cba. Capital":{"f":2,"m":8,"tot":10},"Pta. Campana":{"f":14,"m":79,"tot":93},"Pta. Capdeville":{"f":19,"m":136,"tot":155},"Pta. Malagueño":{"f":43,"m":221,"tot":264},"Pta. Puesto Viejo":{"f":19,"m":165,"tot":184},"Añacua":{"f":1,"m":14,"tot":15},"Pta. Campana (JMHO)":{"f":1,"m":6,"tot":7},"Pta. Córdoba Norte":{"f":8,"m":50,"tot":58}},"5":{"Pta. Capdeville (Ecaf)":{"f":0,"m":3,"tot":3},"Pta. Yocsina":{"f":10,"m":38,"tot":48},"Puesto Viejo (Ecaf)":{"f":0,"m":1,"tot":1},"Agr. Malagueño":{"f":3,"m":20,"tot":23},"Adm. Bs. As.":{"f":0,"m":1,"tot":1},"Adm. Central MG":{"f":76,"m":90,"tot":166},"Adm. Resistencia":{"f":1,"m":1,"tot":2},"Cba. Capital":{"f":2,"m":8,"tot":10},"Pta. Campana":{"f":15,"m":80,"tot":95},"Pta. Capdeville":{"f":20,"m":139,"tot":159},"Pta. Malagueño":{"f":43,"m":217,"tot":260},"Pta. Puesto Viejo":{"f":19,"m":160,"tot":179},"Añacua":{"f":1,"m":14,"tot":15},"Pta. Campana (JMHO)":{"f":1,"m":6,"tot":7},"Pta. Córdoba Norte":{"f":8,"m":51,"tot":59}},"6":{"Pta. Capdeville (Ecaf)":{"f":0,"m":3,"tot":3},"Pta. Yocsina":{"f":9,"m":38,"tot":47},"Puesto Viejo (Ecaf)":{"f":0,"m":1,"tot":1},"Agr. Malagueño":{"f":3,"m":21,"tot":24},"Adm. Bs. As.":{"f":0,"m":1,"tot":1},"Adm. Central MG":{"f":78,"m":91,"tot":169},"Adm. Resistencia":{"f":1,"m":1,"tot":2},"Cba. Capital":{"f":2,"m":8,"tot":10},"Pta. Campana":{"f":15,"m":80,"tot":95},"Pta. Capdeville":{"f":21,"m":138,"tot":159},"Pta. Malagueño":{"f":42,"m":216,"tot":258},"Pta. Puesto Viejo":{"f":19,"m":158,"tot":177},"Añacua":{"f":1,"m":17,"tot":18},"Pta. Campana (JMHO)":{"f":1,"m":6,"tot":7},"Pta. Córdoba Norte":{"f":8,"m":50,"tot":58}}};
-const ALTAS_NOMINA_DEFAULT = { 1: NOMINA_ENERO_MAP, ...NOMINA_MENSUAL_MAP };
-let ALTAS_NOMINA_MENSUAL = ALTAS_NOMINA_DEFAULT;
-
 function altasNominaFor(mi, site) {
-  const monthData = ALTAS_NOMINA_MENSUAL[mi] || {};
+  if (mi === 1) return site ? (NOMINA_ENERO_MAP[site] || { f: 0, m: 0, tot: 0 }) : NOMINA_ENERO_TOTAL;
+  const monthData = NOMINA_MENSUAL_MAP[mi] || {};
   if (!site) {
     return Object.values(monthData).reduce((acc, v) => ({ f: acc.f + v.f, m: acc.m + v.m, tot: acc.tot + v.tot }), { f: 0, m: 0, tot: 0 });
   }
   return monthData[site] || { f: 0, m: 0, tot: 0 };
-}
-function altasNominaMeses() {
-  const meses = Object.keys(ALTAS_NOMINA_MENSUAL).map(Number).filter(m => m >= 1 && m <= 12).sort((a, b) => a - b);
-  return meses.length ? meses : [1];
-}
-function altasNominaSites() {
-  return [...new Set(Object.values(ALTAS_NOMINA_MENSUAL).flatMap(month => Object.keys(month || {})))];
 }
 
 const altasState = { mes: '', sitio: '', genero: '', q: '' };
@@ -1264,46 +1279,7 @@ async function parseAltasFile(file) {
       mes: parsed.month
     });
   }
-  const nominaMensual = {};
-  const normalizeCell = value => (value == null ? '' : String(value).trim())
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  for (let r = 0; r < rows.length; r++) {
-    const row = rows[r] || [];
-    const titleCol = row.findIndex(value => /^nomina\s+/.test(normalizeCell(value)));
-    if (titleCol === -1) continue;
-
-    const monthName = normalizeCell(row[titleCol]).replace(/^nomina\s+/, '').split(/\s+/)[0];
-    const month = MES_NUM_MAP[monthName];
-    const pivotHeader = rows[r + 1] || [];
-    const normalizedHeader = pivotHeader.map(normalizeCell);
-    const findPivotCol = names => normalizedHeader.findIndex((value, i) => i >= titleCol && names.includes(value));
-    const divCol = findPivotCol(['div personal', 'division personal', 'etiquetas de fila', 'row labels']);
-    const femaleCol = findPivotCol(['femenino']);
-    const maleCol = findPivotCol(['masculino']);
-    const totalCol = findPivotCol(['grand total', 'total general', 'total']);
-    if (!month || divCol === -1 || femaleCol === -1 || maleCol === -1) continue;
-
-    const monthData = {};
-    for (let rr = r + 2; rr < rows.length; rr++) {
-      const pivotRow = rows[rr] || [];
-      const division = pivotRow[divCol] == null ? '' : String(pivotRow[divCol]).trim();
-      const normalizedDivision = normalizeCell(division);
-      if (['grand total', 'total general', 'total'].includes(normalizedDivision)) break;
-      if (!division) {
-        if (Object.keys(monthData).length) break;
-        continue;
-      }
-
-      const female = Number(pivotRow[femaleCol]);
-      const male = Number(pivotRow[maleCol]);
-      const totalRaw = totalCol === -1 ? null : pivotRow[totalCol];
-      const total = totalRaw == null || totalRaw === '' ? female + male : Number(totalRaw);
-      if (![female, male, total].every(Number.isFinite)) continue;
-      monthData[division] = { f: female, m: male, tot: total };
-    }
-    if (Object.keys(monthData).length) nominaMensual[month] = monthData;
-  }
-  return { records: out, skippedFecha, nominaMensual };
+  return { records: out, skippedFecha };
 }
 
 function altasMonthYearLabel(records) {
@@ -1447,25 +1423,28 @@ function altasRenderGeneroPorSitio(rows) {
   }).join('');
 }
 function altasDiversidadSerie(site) {
-  /* Serie mensual por Div Personal usando la dotación real de cada cierre informada en el Excel. */
-  const meses = altasNominaMeses();
+  /* Serie mensual de % mujeres para un sitio (o compañía completa si site es '' ), usando la
+     dotación real cerrada de cada mes (nómina al 31/1 y pivots reales de nómina feb-jun) — ya no
+     es una estimación por altas menos bajas, es el headcount real de cada cierre mensual. */
+  const meses = ALTAS_MESES.length ? ALTAS_MESES : [1];
   return meses.map(mi => {
     const d = altasNominaFor(mi, site);
     return { mi, f: d.f, tot: d.tot, pctF: d.tot ? (d.f / d.tot * 100) : null };
   });
 }
 function altasRenderDiversidad() {
-  /* Un mini-gráfico por división evita superponer todas las trayectorias. */
-  const sites = altasNominaSites().sort((a, b) => altasNominaFor(1, b).tot - altasNominaFor(1, a).tot || a.localeCompare(b, 'es'));
+  /* Small multiples: un mini-gráfico por planta en vez de todas las líneas superpuestas — mismo dato
+     (base nómina enero + altas acumuladas), mucho más fácil de leer de un vistazo. */
+  const sites = Object.keys(NOMINA_ENERO_MAP).sort((a, b) => NOMINA_ENERO_MAP[b].tot - NOMINA_ENERO_MAP[a].tot);
   const total = altasDiversidadSerie('');
   const entries = [{ label: 'Total compañía', pts: total, isTotal: true }, ...sites.map(site => ({ label: site, pts: altasDiversidadSerie(site), isTotal: false }))];
 
   function miniCard({ label, pts, isTotal }) {
     const W = 150, H = 46, pad = 4;
-    const january = pts.find(p => p.mi === 1 && p.pctF != null);
+    const first = pts.find(p => p.pctF != null);
     const last = [...pts].reverse().find(p => p.pctF != null);
     const cur = last ? Math.round(last.pctF) : null;
-    const ene = january ? Math.round(january.pctF) : null;
+    const ene = first ? Math.round(first.pctF) : null;
     const delta = (cur != null && ene != null) ? cur - ene : null;
     const trendColor = delta == null ? 'var(--muted)' : (delta >= 0 ? 'var(--i)' : 'var(--neg)');
     const yMax = 100;
@@ -1501,13 +1480,12 @@ function altasRenderDiversidad() {
     `<span>Cada mini-gráfico va de 0% a 100%; la línea punteada marca el 50%. Color verde = subió respecto a enero, rojo = bajó.</span>`;
 }
 function altasRenderDiversidadTabla() {
-  const nominaMeses = altasNominaMeses();
-  const lastMi = nominaMeses[nominaMeses.length - 1];
+  const lastMi = ALTAS_MESES.length ? ALTAS_MESES[ALTAS_MESES.length - 1] : 1;
   const hastaMi = altasState.mes ? +altasState.mes : lastMi;
   ['altas-div-mes-lbl', 'altas-div-mes-lbl2', 'altas-div-mes-lbl3', 'altas-div-mes-lbl4'].forEach(id => { $(id).textContent = MES_ABR[hastaMi]; });
-  const sites = altasNominaSites().sort((a, b) => a.localeCompare(b, 'es'));
+  const sites = Object.keys(NOMINA_ENERO_MAP).sort((a, b) => a.localeCompare(b, 'es'));
   const rowsHtml = sites.map(site => {
-    const base = altasNominaFor(1, site);
+    const base = NOMINA_ENERO_MAP[site];
     const pctEne = base.tot ? (base.f / base.tot * 100) : null;
     const rowsSite = altasFilteredBySiteOnly(site).filter(r => r.mes > 1 && r.mes <= hastaMi);
     const bajasSite = bajasFilteredBySiteOnly(site).filter(r => r.mes > 1 && r.mes <= hastaMi);
@@ -1569,9 +1547,6 @@ async function altasInit() {
       const parsed = JSON.parse(stored.value);
       if (parsed && Array.isArray(parsed.records) && parsed.records.length) {
         ALTAS_DATA = parsed.records;
-        if (parsed.nominaMensual && typeof parsed.nominaMensual === 'object' && Object.keys(parsed.nominaMensual).length) {
-          ALTAS_NOMINA_MENSUAL = parsed.nominaMensual;
-        }
         const fecha = parsed.uploadedAt ? new Date(parsed.uploadedAt).toLocaleString('es-AR') : '';
         $('altas-upload-status').textContent = `Últimos datos cargados: "${parsed.filename || 'archivo'}"${fecha ? ' · ' + fecha : ''}`;
         $('altas-upload-status').className = 'upload-status ok';
@@ -1587,18 +1562,14 @@ onChange('altas-file-input', async (e) => {
   const statusEl = $('altas-upload-status');
   statusEl.textContent = 'Procesando archivo…'; statusEl.className = 'upload-status';
   try {
-    const { records, skippedFecha, nominaMensual } = await parseAltasFile(file);
+    const { records, skippedFecha } = await parseAltasFile(file);
     if (!records.length) throw new Error('No se encontraron registros válidos en la hoja ALTAS.');
-    if (!Object.keys(nominaMensual).length) throw new Error('No se encontraron las tablas "NOMINA <MES>" agrupadas por Div Personal en la hoja ALTAS.');
-    const missingNominaMonths = [...new Set(records.map(r => r.mes))].filter(month => !nominaMensual[month]);
-    if (missingNominaMonths.length) throw new Error(`Faltan tablas de nómina para: ${missingNominaMonths.map(month => MES_NOM[month]).join(', ')}.`);
     ALTAS_DATA = records;
-    ALTAS_NOMINA_MENSUAL = nominaMensual;
     const uploadedAt = new Date().toISOString();
-    try { await window.storage.set('altas-dataset', JSON.stringify({ records, nominaMensual, uploadedAt, filename: file.name }), true); }
+    try { await window.storage.set('altas-dataset', JSON.stringify({ records, uploadedAt, filename: file.name }), true); }
     catch (err) { throw new Error(`El archivo se procesó pero NO se guardó en el servidor (${err.message}). Los demás usuarios no van a ver este cambio: probá de nuevo.`); }
     altasInitFiltersAndRender(); altasUpdateMeta();
-    let msg = `✓ ${records.length} registros y ${Object.keys(nominaMensual).length} nóminas mensuales cargados desde "${file.name}".`;
+    let msg = `✓ ${records.length} registros cargados desde "${file.name}".`;
     if (skippedFecha) msg += ` ${skippedFecha} fila(s) con fecha inválida omitida(s).`;
     statusEl.textContent = msg; statusEl.className = 'upload-status ok';
   } catch (err) { statusEl.textContent = '⚠ ' + err.message; statusEl.className = 'upload-status err'; }
