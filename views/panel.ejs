@@ -129,8 +129,17 @@
   .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
   .kpi .lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
   .kpi .val { font-size: 30px; font-weight: 700; line-height: 1.15; margin-top: 2px; }
-  .kpi .val.pos { color: var(--i); } .kpi .val.neg { color: var(--neg); }
+  .kpi .val.pos { color: var(--i); } .kpi .val.neg { color: var(--neg); } .kpi .val.neutral { color: var(--muted); }
   .kpi .sub { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+  .kpi.kpi-click { cursor: pointer; user-select: none; border-color: var(--border); transition: border-color .15s ease, background .15s ease; }
+  .kpi.kpi-click:hover { border-color: var(--v); }
+  .kpi.kpi-click.active { border-color: var(--v); background: color-mix(in srgb, var(--v) 10%, var(--surface)); }
+  .kpi.kpi-click .lbl { display: flex; align-items: center; gap: 6px; }
+
+  /* ---------- pill de sucesor (semáforo) ---------- */
+  .pill.suc-si { background: color-mix(in srgb, var(--i) 20%, transparent); color: var(--i); }
+  .pill.suc-no { background: color-mix(in srgb, var(--neg) 18%, transparent); color: var(--neg); }
+  .pill.suc-sin { background: color-mix(in srgb, var(--muted) 22%, transparent); color: var(--muted); }
 
   /* ---------- tarjetas / grilla ---------- */
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -229,6 +238,7 @@
     <button class="tab-btn active" id="tab-btn-bajas" type="button" role="tab" aria-selected="true">Bajas de personal</button>
     <button class="tab-btn" id="tab-btn-mtp" type="button" role="tab" aria-selected="false">Comparación Headcount vs MTP</button>
     <button class="tab-btn" id="tab-btn-altas" type="button" role="tab" aria-selected="false">Altas de personal</button>
+    <button class="tab-btn" id="tab-btn-sucesion" type="button" role="tab" aria-selected="false">Sucesión de posiciones</button>
   </nav>
 
   <!-- ============================================================ -->
@@ -259,14 +269,33 @@
         </select>
       </label>
       <label>Sitio <select id="f-sitio"><option value="">Todos</option></select></label>
+      <label>Sucesor
+        <select id="f-sucesor">
+          <option value="">Todos</option>
+          <option value="si">Con sucesor</option>
+          <option value="no">Sin sucesor</option>
+          <option value="sin-info">Sin información</option>
+        </select>
+      </label>
       <button id="f-clear" type="button">Limpiar filtros</button>
     </div>
 
+    <div class="search" style="margin: 0 0 14px;">
+      <input id="q" type="search" placeholder="Buscar en todos los campos: nombre, sitio, gerencia, motivo, BP…" aria-label="Buscar en bajas" style="width: 340px;">
+      <span class="count" id="tcount"></span>
+    </div>
+
+    <div class="kpis" id="k-gender-cards">
+      <div class="kpi kpi-click active" id="card-g-total" data-g=""><div class="lbl">Total bajas</div><div class="val" id="kg-total">–</div><div class="sub" id="kg-total-sub"></div></div>
+      <div class="kpi kpi-click" id="card-g-m" data-g="M"><div class="lbl">Bajas de hombres</div><div class="val" id="kg-m">–</div><div class="sub" id="kg-m-sub"></div></div>
+      <div class="kpi kpi-click" id="card-g-f" data-g="F"><div class="lbl">Bajas de mujeres</div><div class="val" id="kg-f">–</div><div class="sub" id="kg-f-sub"></div></div>
+    </div>
+
     <div class="kpis">
-      <div class="kpi"><div class="lbl">Total bajas</div><div class="val" id="k-total">–</div><div class="sub" id="k-total-sub"></div></div>
       <div class="kpi"><div class="lbl">Voluntarias</div><div class="val" id="k-vol">–</div><div class="sub" id="k-vol-sub"></div></div>
       <div class="kpi"><div class="lbl">Involuntarias</div><div class="val" id="k-inv">–</div><div class="sub" id="k-inv-sub"></div></div>
       <div class="kpi"><div class="lbl">Mes pico</div><div class="val" id="k-pico">–</div><div class="sub" id="k-pico-sub"></div></div>
+      <div class="kpi"><div class="lbl">Con sucesor identificado</div><div class="val" id="k-suc">–</div><div class="sub" id="k-suc-sub"></div></div>
     </div>
 
     <div class="grid">
@@ -300,14 +329,10 @@
       </div>
 
       <div class="card full">
-        <div class="card-head"><div><h2>Detalle de bajas</h2><div class="hint">Todos los registros del período filtrado</div></div></div>
-        <div class="search">
-          <input id="q" type="search" placeholder="Buscar por nombre, sitio, gerencia…" aria-label="Buscar en la tabla">
-          <span class="count" id="tcount"></span>
-        </div>
+        <div class="card-head"><div><h2>Detalle de bajas</h2><div class="hint">Todos los registros del período filtrado — el buscador general está arriba, junto a las cards</div></div></div>
         <div class="tblwrap">
           <table>
-            <thead><tr><th>Empleado</th><th>Fecha</th><th>Tipo</th><th>Motivo</th><th>Sitio</th><th>Dirección</th><th>Gerencia</th><th>BP</th></tr></thead>
+            <thead><tr><th>Empleado</th><th>Fecha</th><th>Tipo</th><th>Motivo</th><th>Sitio</th><th>Dirección</th><th>Gerencia</th><th>BP</th><th>Sucesor</th></tr></thead>
             <tbody id="tbody"></tbody>
           </table>
           <div class="empty" id="tempty" hidden>Sin resultados con los filtros actuales.</div>
@@ -348,10 +373,21 @@
     </div>
 
     <div class="kpis">
-      <div class="kpi"><div class="lbl">Headcount Real</div><div class="val" id="mtp-k-real">–</div><div class="sub" id="mtp-k-real-sub"></div></div>
-      <div class="kpi"><div class="lbl">vs. Línea base 31/12/25</div><div class="val" id="mtp-k-base">–</div><div class="sub" id="mtp-k-base-sub"></div></div>
-      <div class="kpi"><div class="lbl">vs. Objetivo (MTP)</div><div class="val" id="mtp-k-gap">–</div><div class="sub" id="mtp-k-gap-sub"></div></div>
-      <div class="kpi"><div class="lbl">% Cumplimiento</div><div class="val" id="mtp-k-pct">–</div><div class="sub" id="mtp-k-pct-sub"></div></div>
+      <div class="kpi"><div class="lbl">Headcount real del mes</div><div class="val" id="mtp-k-real">–</div><div class="sub" id="mtp-k-real-sub"></div></div>
+      <div class="kpi"><div class="lbl">Diferencia vs. línea base 31/12/25</div><div class="val" id="mtp-k-base">–</div><div class="sub" id="mtp-k-base-sub"></div></div>
+      <div class="kpi"><div class="lbl">Diferencia vs. objetivo MTP</div><div class="val" id="mtp-k-gap">–</div><div class="sub" id="mtp-k-gap-sub"></div></div>
+      <div class="kpi"><div class="lbl">% cumplimiento vs. MTP</div><div class="val" id="mtp-k-pct">–</div><div class="sub" id="mtp-k-pct-sub"></div></div>
+    </div>
+
+    <div class="subsection-head">
+      <h3>Crecimiento de dotación vs. enero</h3>
+      <p class="hint">Compara el headcount real del mes seleccionado contra el primer mes cargado (enero), en todas las plantas.</p>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="lbl">Dotación actual</div><div class="val" id="mtp-k-actual">–</div><div class="sub" id="mtp-k-actual-sub"></div></div>
+      <div class="kpi"><div class="lbl">Dotación de enero</div><div class="val" id="mtp-k-enero">–</div><div class="sub" id="mtp-k-enero-sub"></div></div>
+      <div class="kpi"><div class="lbl">Diferencia (personas)</div><div class="val" id="mtp-k-diff">–</div><div class="sub" id="mtp-k-diff-sub"></div></div>
+      <div class="kpi"><div class="lbl">Variación %</div><div class="val" id="mtp-k-var">–</div><div class="sub" id="mtp-k-var-sub"></div></div>
     </div>
 
     <div class="grid">
@@ -435,10 +471,17 @@
 
     <div class="upload-bar">
       <% if (esAdmin) { %>
-      <label class="upload-btn" for="altas-file-input">📤 Cargar nuevo Excel (.xlsx)</label>
+      <label class="upload-btn" for="altas-file-input">📤 Cargar Excel de altas (.xlsx)</label>
       <input type="file" class="file-input-hidden" id="altas-file-input" accept=".xlsx,.xls" />
       <% } %>
       <span class="upload-status" id="altas-upload-status">Datos iniciales cargados.</span>
+    </div>
+    <div class="upload-bar">
+      <% if (esAdmin) { %>
+      <label class="upload-btn" for="mujeres-file-input">📤 Cargar Excel de % Mujeres (.xlsx)</label>
+      <input type="file" class="file-input-hidden" id="mujeres-file-input" accept=".xlsx,.xls" />
+      <% } %>
+      <span class="upload-status" id="mujeres-upload-status">Datos iniciales cargados.</span>
     </div>
 
     <div class="filters" role="group" aria-label="Filtros de altas">
@@ -451,14 +494,31 @@
           <option value="M">Masculino</option>
         </select>
       </label>
+      <label>Motivo <select id="altas-f-motivo"></select></label>
+      <label>Vacante
+        <select id="altas-f-vacante">
+          <option value="">Todas</option>
+          <option value="si">Cubiertas</option>
+          <option value="no">No cubiertas</option>
+        </select>
+      </label>
       <button id="altas-f-clear" type="button">Limpiar filtros</button>
     </div>
 
+    <div class="search" style="margin: 0 0 14px;">
+      <input id="altas-q" type="search" placeholder="Buscar en todos los campos: nombre, sitio, motivo…" aria-label="Buscar en altas" style="width: 340px;">
+      <span class="count" id="altas-tcount"></span>
+    </div>
+
+    <div class="kpis" id="altas-k-gender-cards">
+      <div class="kpi kpi-click active" id="altas-card-g-total" data-g=""><div class="lbl">Total altas</div><div class="val" id="altas-k-total">–</div><div class="sub" id="altas-k-total-sub"></div></div>
+      <div class="kpi kpi-click" id="altas-card-g-m" data-g="M"><div class="lbl">Altas de hombres</div><div class="val" id="altas-k-m">–</div><div class="sub" id="altas-k-m-sub"></div></div>
+      <div class="kpi kpi-click" id="altas-card-g-f" data-g="F"><div class="lbl">Altas de mujeres</div><div class="val" id="altas-k-f">–</div><div class="sub" id="altas-k-f-sub"></div></div>
+    </div>
+
     <div class="kpis">
-      <div class="kpi"><div class="lbl">Total altas</div><div class="val" id="altas-k-total">–</div><div class="sub" id="altas-k-total-sub"></div></div>
-      <div class="kpi"><div class="lbl">Femeninas</div><div class="val" id="altas-k-f">–</div><div class="sub" id="altas-k-f-sub"></div></div>
-      <div class="kpi"><div class="lbl">Masculinas</div><div class="val" id="altas-k-m">–</div><div class="sub" id="altas-k-m-sub"></div></div>
       <div class="kpi"><div class="lbl">Mes pico</div><div class="val" id="altas-k-pico">–</div><div class="sub" id="altas-k-pico-sub"></div></div>
+      <div class="kpi"><div class="lbl">Vacantes cubiertas</div><div class="val" id="altas-k-vac">–</div><div class="sub" id="altas-k-vac-sub"></div></div>
     </div>
 
     <div class="grid">
@@ -503,14 +563,10 @@
       </div>
 
       <div class="card full">
-        <div class="card-head"><div><h2>Detalle de altas</h2><div class="hint">Todos los ingresos del período filtrado</div></div></div>
-        <div class="search">
-          <input id="altas-q" type="search" placeholder="Buscar por nombre o sitio…" aria-label="Buscar en la tabla de altas">
-          <span class="count" id="altas-tcount"></span>
-        </div>
+        <div class="card-head"><div><h2>Detalle de altas</h2><div class="hint">Todos los ingresos del período filtrado — el buscador general está arriba, junto a las cards</div></div></div>
         <div class="tblwrap">
           <table>
-            <thead><tr><th>Empleado</th><th>Fecha</th><th>Género</th><th>Motivo</th><th>Sitio</th></tr></thead>
+            <thead><tr><th>Empleado</th><th>Fecha</th><th>Género</th><th>Motivo</th><th>Sitio</th><th>Vacante cubierta</th></tr></thead>
             <tbody id="altas-tbody"></tbody>
           </table>
           <div class="empty" id="altas-tempty" hidden>Sin resultados con los filtros actuales.</div>
@@ -520,6 +576,77 @@
 
     <footer class="bottom">
       <span id="altas-footer-text"></span>
+    </footer>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- VISTA: SUCESIÓN DE POSICIONES (SEMÁFORO)                      -->
+  <!-- ============================================================ -->
+  <section id="view-sucesion" hidden>
+    <div class="section-head">
+      <h1 id="suc-h1">Sucesión de posiciones</h1>
+      <p class="sub">Posiciones clave por planta: candidatos identificados (Ready Now / In Development / In Consideration) y semáforo de riesgo. Es un reporte independiente — no está cruzado fila a fila con las bajas.</p>
+    </div>
+
+    <div class="upload-bar">
+      <% if (esAdmin) { %>
+      <label class="upload-btn" for="suc-file-input">📤 Cargar Excel de sucesión (.xlsx)</label>
+      <input type="file" class="file-input-hidden" id="suc-file-input" accept=".xlsx,.xls" />
+      <% } %>
+      <span class="upload-status" id="suc-upload-status">Sin datos cargados todavía.</span>
+    </div>
+
+    <div class="filters" role="group" aria-label="Filtros de sucesión">
+      <label>Planta <select id="suc-f-planta"><option value="">Todas</option></select></label>
+      <label>Estado
+        <select id="suc-f-estado">
+          <option value="">Todos</option>
+          <option value="verde">Verde</option>
+          <option value="amarillo">Amarillo</option>
+          <option value="rojo">Rojo</option>
+        </select>
+      </label>
+      <button id="suc-f-clear" type="button">Limpiar filtros</button>
+    </div>
+
+    <div class="search" style="margin: 0 0 14px;">
+      <input id="suc-q" type="search" placeholder="Buscar por posición, planta, candidato…" aria-label="Buscar en sucesión" style="width: 340px;">
+      <span class="count" id="suc-tcount"></span>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="lbl">Posiciones</div><div class="val" id="suc-k-total">–</div><div class="sub" id="suc-k-total-sub"></div></div>
+      <div class="kpi"><div class="lbl">Verde</div><div class="val pos" id="suc-k-verde">–</div><div class="sub" id="suc-k-verde-sub"></div></div>
+      <div class="kpi"><div class="lbl">Amarillo</div><div class="val" id="suc-k-amarillo">–</div><div class="sub" id="suc-k-amarillo-sub"></div></div>
+      <div class="kpi"><div class="lbl">Rojo</div><div class="val neg" id="suc-k-rojo">–</div><div class="sub" id="suc-k-rojo-sub"></div></div>
+    </div>
+
+    <div class="grid">
+      <div class="card full">
+        <div class="card-head"><div><h2>Posiciones clave por planta</h2><div class="hint">Candidatos identificados y estado de riesgo</div></div></div>
+        <div class="tblwrap">
+          <table>
+            <thead><tr><th>Posición</th><th>Planta</th><th>Ready Now</th><th>In Development</th><th>In Consideration</th><th>Estado</th></tr></thead>
+            <tbody id="suc-tbody"></tbody>
+          </table>
+          <div class="empty" id="suc-tempty" hidden>Sin resultados con los filtros actuales.</div>
+        </div>
+      </div>
+
+      <div class="card full">
+        <div class="card-head"><div><h2>Detalle de desarrollo por persona</h2><div class="hint">Candidatos con plan de desarrollo, gap y acciones (cuando el Excel lo incluye)</div></div></div>
+        <div class="tblwrap">
+          <table>
+            <thead><tr><th>Nombre</th><th>Posición</th><th>Site</th><th>% Banda</th><th>Gap</th><th>Acciones</th></tr></thead>
+            <tbody id="suc-people-tbody"></tbody>
+          </table>
+          <div class="empty" id="suc-people-tempty" hidden>El Excel cargado no trae esta tabla.</div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="bottom">
+      <span id="suc-footer-text"></span>
     </footer>
   </section>
 </div>
@@ -557,6 +684,19 @@ const $ = id => document.getElementById(id);
 const onChange = (id, fn) => { const el = $(id); if (el) el.addEventListener('change', fn); };
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 const pct = (n, d) => d ? Math.round(n / d * 100) + '%' : '–';
+
+/* ================================================================ */
+/* Carga de Excel: un archivo puede traer la carga completa o solo   */
+/* uno o varios meses. Regla: los meses que vienen en el archivo     */
+/* nuevo reemplazan a los que ya había guardados para ese mes; los   */
+/* meses que no vienen en el archivo nuevo se conservan tal cual.    */
+/* ================================================================ */
+function mergeRecordsByMonth(oldRecords, newRecords, monthKeyFn) {
+  if (!oldRecords || !oldRecords.length) return newRecords.slice();
+  const newMonths = new Set(newRecords.map(monthKeyFn));
+  const kept = oldRecords.filter(r => !newMonths.has(monthKeyFn(r)));
+  return kept.concat(newRecords);
+}
 
 const tip = $('tip');
 document.addEventListener('mouseover', e => {
@@ -599,11 +739,20 @@ function countBy(arr, key) {
 const DATA_DEFAULT = [{"n": "RIOS, MIGUEL ANGEL", "g": "M", "t": "V", "m": "Mutuo acuerdo", "s": "Pta. Puesto Viejo", "f": "2026-01-27", "mes": 1, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta puesto viejo", "bp": "MARTIN, CARLOS ALBERTO"}, {"n": "MERCADO, DAMIAN SEGUNDO", "g": "M", "t": "V", "m": "Jubilación", "s": "Pta. Capdeville", "f": "2026-01-17", "mes": 1, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta capdeville", "bp": "DEVITA, ANALIA LOURDES"}, {"n": "GONZALEZ, GEORGINA GISELA", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-01-02", "mes": 1, "dir": "Dirección Comercial", "ger": "Sin dato", "bp": "Sin dato"}, {"n": "PEREZ, JOSE OSVALDO", "g": "M", "t": "I", "m": "Despido con causa", "s": "Adm. Central MG", "f": "2026-01-27", "mes": 1, "dir": "Dirección General", "ger": "Gcia. supply chain", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "LESLIE, MILAGROS", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-01-01", "mes": 1, "dir": "Dirección General", "ger": "Gcia. de negocio disensa", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "PANTOJA, ERICO JULIAN", "g": "M", "t": "I", "m": "Despido sin causa", "s": "Pta. Puesto Viejo", "f": "2026-01-27", "mes": 1, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta puesto viejo", "bp": "MARTIN, CARLOS ALBERTO"}, {"n": "DIAZ, JOAQUINA GUADALUPE", "g": "F", "t": "V", "m": "Renuncia", "s": "Pta. Campana", "f": "2026-01-14", "mes": 1, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta campana", "bp": "DAMONTE, IGNACIO FABIAN"}, {"n": "ROCHA, CINTIA JOHANNA", "g": "F", "t": "V", "m": "Fin de contrato", "s": "Pta. Campana", "f": "2026-01-16", "mes": 1, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta campana", "bp": "DAMONTE, IGNACIO FABIAN"}, {"n": "FLEIDERMAN, CLARA BELEN", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-01-24", "mes": 1, "dir": "Sin dato", "ger": "Sin dato", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "ECHAVARRIA, MARIA CANDELARIA", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-01-17", "mes": 1, "dir": "Dirección General", "ger": "Gcia. supply chain", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "SIBILLA GAIO, MARIA EMILIA", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-01-24", "mes": 1, "dir": "Dirección de Administracion y Finanzas", "ger": "Gcia. de administración y  finanzas", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "CORNEJO, GONZALO MATIAS", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Córdoba Norte", "f": "2026-01-28", "mes": 1, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "CORREDERA, FLORENCIA BELEN", "g": "F", "t": "V", "m": "Renuncia", "s": "Pta. Córdoba Norte", "f": "2026-01-01", "mes": 1, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "BUTELER, MARIA EUGENIA", "g": "F", "t": "I", "m": "Despido sin causa", "s": "Adm. Central MG", "f": "2026-02-10", "mes": 2, "dir": "Sin dato", "ger": "Sin dato", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "RAVIOLO, MARIA MARTA", "g": "F", "t": "I", "m": "Despido sin causa", "s": "Adm. Central MG", "f": "2026-02-10", "mes": 2, "dir": "Sin dato", "ger": "Sin dato", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "ITURRIA, DANIEL EDUARDO", "g": "M", "t": "V", "m": "Renuncia", "s": "Añacua", "f": "2026-02-10", "mes": 2, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "PEDERNERA, BELEN", "g": "F", "t": "V", "m": "Renuncia", "s": "Pta. Capdeville", "f": "2026-02-24", "mes": 2, "dir": "Dirección Comercial", "ger": "Sin dato", "bp": "Sin dato"}, {"n": "SUAREZ, PAULA", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-02-09", "mes": 2, "dir": "Dirección Comercial", "ger": "Sin dato", "bp": "Sin dato"}, {"n": "FELDMANN, SANTIAGO ANDRES", "g": "M", "t": "I", "m": "Despido sin causa", "s": "Adm. Central MG", "f": "2026-02-11", "mes": 2, "dir": "Dirección General", "ger": "Gcia. de negocio disensa", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "GONZALEZ, MANUEL", "g": "M", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-02-24", "mes": 2, "dir": "Dirección General", "ger": "Gcia. de roofing y morteros", "bp": "DIMOV, JULIO LUCAS"}, {"n": "CUELLO, LUIS ANIBAL", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Córdoba Norte", "f": "2026-02-12", "mes": 2, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "ROJA, JULIO CESAR", "g": "M", "t": "I", "m": "Despido sin causa", "s": "Pta. Campana", "f": "2026-03-13", "mes": 3, "dir": "Dirección General", "ger": "Gcia. supply chain", "bp": "DAMONTE, IGNACIO FABIAN"}, {"n": "BURGOS, EVANGELINA ELENA", "g": "F", "t": "I", "m": "Despido sin causa", "s": "Pta. Puesto Viejo", "f": "2026-03-07", "mes": 3, "dir": "Dirección General", "ger": "Gcia. supply chain", "bp": "MARTIN, CARLOS ALBERTO"}, {"n": "LEON CEJAS, CLAUDIO FEDERICO", "g": "M", "t": "I", "m": "Despido sin causa", "s": "Pta. Puesto Viejo", "f": "2026-03-07", "mes": 3, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta puesto viejo", "bp": "MARTIN, CARLOS ALBERTO"}, {"n": "MARINO, DAVID SEBASTIAN", "g": "M", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-03-01", "mes": 3, "dir": "Dirección de Recursos Humanos", "ger": "Gcia. de recursos humanos", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "PEREZ GUILLEN, CESAR EDUARDO", "g": "M", "t": "I", "m": "Despido sin causa", "s": "Pta. Campana", "f": "2026-03-13", "mes": 3, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta campana", "bp": "DAMONTE, IGNACIO FABIAN"}, {"n": "YAMIN, NICOLAS NOE", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Capdeville", "f": "2026-03-07", "mes": 3, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta capdeville", "bp": "DEVITA, ANALIA LOURDES"}, {"n": "GRAÑA, LUCIANA INES", "g": "F", "t": "I", "m": "Despido sin causa", "s": "Pta. Malagueño", "f": "2026-03-06", "mes": 3, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta malagueño", "bp": "DIMOV, JULIO LUCAS"}, {"n": "GALINDEZ, MARIA CANDELARIA", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-03-07", "mes": 3, "dir": "Dirección Comercial", "ger": "Sin dato", "bp": "Sin dato"}, {"n": "LARIO BUSTOS, AXEL ADRIEL", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Yocsina", "f": "2026-03-04", "mes": 3, "dir": "Dirección General", "ger": "Gcia. de afr", "bp": "DIMOV, JULIO LUCAS"}, {"n": "BALZARELLI, JOSEFINA", "g": "F", "t": "V", "m": "Renuncia", "s": "Pta. Capdeville", "f": "2026-03-01", "mes": 3, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta capdeville", "bp": "DEVITA, ANALIA LOURDES"}, {"n": "GALBAN, RICARDO ISRAEL JONATHAN", "g": "M", "t": "I", "m": "Despido con causa", "s": "Pta. Campana", "f": "2026-04-11", "mes": 4, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta campana", "bp": "DAMONTE, IGNACIO FABIAN"}, {"n": "VILLARROEL, RAMON ANTONIO", "g": "M", "t": "V", "m": "Mutuo acuerdo", "s": "Pta. Malagueño", "f": "2026-04-17", "mes": 4, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta malagueño", "bp": "DIMOV, JULIO LUCAS"}, {"n": "MANSILLA, PABLO CESAR", "g": "M", "t": "I", "m": "Despido sin causa", "s": "Pta. Campana", "f": "2026-04-15", "mes": 4, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta campana", "bp": "DAMONTE, IGNACIO FABIAN"}, {"n": "ASCUA, MELINA BELEN", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-04-24", "mes": 4, "dir": "Dirección Comercial", "ger": "Sin dato", "bp": "Sin dato"}, {"n": "FRANCO, LUIS DARIO", "g": "M", "t": "I", "m": "Despido sin causa", "s": "Pta. Capdeville", "f": "2026-04-18", "mes": 4, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta capdeville", "bp": "DEVITA, ANALIA LOURDES"}, {"n": "ALMIRON, WILFREDO LUIS", "g": "M", "t": "V", "m": "Renuncia", "s": "Añacua", "f": "2026-04-07", "mes": 4, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "MESIAS, FACUNDO JAVIER", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Campana", "f": "2026-04-03", "mes": 4, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta campana", "bp": "DAMONTE, IGNACIO FABIAN"}, {"n": "D AGOSTINO, CECILIA ANDREA", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-04-07", "mes": 4, "dir": "Dirección de Recursos Humanos", "ger": "Gcia. de recursos humanos", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "CABELLO, FEDERICO", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Malagueño", "f": "2026-04-11", "mes": 4, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta malagueño", "bp": "DIMOV, JULIO LUCAS"}, {"n": "LIZZI, JUAN GABRIEL", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Capdeville", "f": "2026-04-15", "mes": 4, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta capdeville", "bp": "DEVITA, ANALIA LOURDES"}, {"n": "DIAZ, ELIAS DANIEL", "g": "M", "t": "V", "m": "Mutuo acuerdo", "s": "Pta. Malagueño", "f": "2026-05-09", "mes": 5, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta malagueño", "bp": "DIMOV, JULIO LUCAS"}, {"n": "CONDORI, FRANCISCO MAURO", "g": "M", "t": "V", "m": "Mutuo acuerdo", "s": "Pta. Puesto Viejo", "f": "2026-05-19", "mes": 5, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta puesto viejo", "bp": "MARTIN, CARLOS ALBERTO"}, {"n": "ANTECAO, CARLOS RAMON", "g": "M", "t": "V", "m": "Mutuo acuerdo", "s": "Pta. Puesto Viejo", "f": "2026-05-09", "mes": 5, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta puesto viejo", "bp": "MARTIN, CARLOS ALBERTO"}, {"n": "CRUZ, MARCELO DANIEL", "g": "M", "t": "V", "m": "Mutuo acuerdo", "s": "Pta. Puesto Viejo", "f": "2026-05-09", "mes": 5, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta puesto viejo", "bp": "MARTIN, CARLOS ALBERTO"}, {"n": "VIDELA, CLAUDIO RUBEN", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Córdoba Norte", "f": "2026-05-01", "mes": 5, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "BERRONDO LION, VALERIA ELISA", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-05-16", "mes": 5, "dir": "Sin dato", "ger": "Sin dato", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "VIJARRA, MARIA DE LOS ANGELES", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-05-16", "mes": 5, "dir": "Dirección de Administracion y Finanzas", "ger": "Gcia. de administración y  finanzas", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "TERUEL, EZEQUIEL MARTIN", "g": "M", "t": "V", "m": "Renuncia", "s": "Adm. Bs. As.", "f": "2026-05-23", "mes": 5, "dir": "Dirección Comercial", "ger": "Sin dato", "bp": "Sin dato"}, {"n": "KEMNITZ, GERARDO ENRIQUE", "g": "M", "t": "V", "m": "Mutuo acuerdo", "s": "Pta. Malagueño", "f": "2026-05-01", "mes": 5, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta malagueño", "bp": "DIMOV, JULIO LUCAS"}, {"n": "ROSALES, HUGO ALBERTO", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Córdoba Norte", "f": "2026-05-01", "mes": 5, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "ROSSETTI, AGUSTIN", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Malagueño", "f": "2026-05-04", "mes": 5, "dir": "Dirección Comercial", "ger": "Sin dato", "bp": "Sin dato"}, {"n": "SORDO, MAXIMILIANO JOSE", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Córdoba Norte", "f": "2026-05-01", "mes": 5, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "ZORZOLI, JULIO CESAR", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Córdoba Norte", "f": "2026-05-01", "mes": 5, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "ACUÑA, GUSTAVO LORENZO", "g": "M", "t": "V", "m": "Renuncia", "s": "Añacua", "f": "2026-05-07", "mes": 5, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "FRANCIONI, LUCIA", "g": "F", "t": "V", "m": "Renuncia", "s": "Adm. Central MG", "f": "2026-05-23", "mes": 5, "dir": "Dirección General", "ger": "Gcia. de negocio disensa", "bp": "PUJOL REIG, VIRGINIA"}, {"n": "ASNAL, JULIO PABLO", "g": "M", "t": "V", "m": "Mutuo acuerdo", "s": "Adm. Central MG", "f": "2026-05-30", "mes": 5, "dir": "Dirección Comercial", "ger": "Sin dato", "bp": "Sin dato"}, {"n": "CUFRE, VALERIA", "g": "F", "t": "I", "m": "Despido sin causa", "s": "Pta. Malagueño", "f": "2026-05-16", "mes": 5, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta malagueño", "bp": "DIMOV, JULIO LUCAS"}, {"n": "MORANO, MIGUEL", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Puesto Viejo", "f": "2026-05-02", "mes": 5, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta puesto viejo", "bp": "MARTIN, CARLOS ALBERTO"}, {"n": "ROMERO, HUGO GERMAIN", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Puesto Viejo", "f": "2026-05-01", "mes": 5, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta puesto viejo", "bp": "MARTIN, CARLOS ALBERTO"}, {"n": "ARIAS MARTIN, NICOLAS ALEJANDRO", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Malagueño", "f": "2026-05-01", "mes": 5, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta malagueño", "bp": "DIMOV, JULIO LUCAS"}, {"n": "COLUCCI, MICAELA AGOSTINA", "g": "F", "t": "V", "m": "Renuncia", "s": "Pta. Córdoba Norte", "f": "2026-05-01", "mes": 5, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "MONGE, DIEGO HERNAN", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Córdoba Norte", "f": "2026-05-01", "mes": 5, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "BASUALDO, GUSTAVO SANTOS", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Córdoba Norte", "f": "2026-05-01", "mes": 5, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "AGUERO, RAUL DANIEL", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Capdeville", "f": "2026-06-02", "mes": 6, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta capdeville", "bp": "DEVITA, ANALIA LOURDES"}, {"n": "PERALES SUAREZ, JOSE LUIS", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Malagueño", "f": "2026-06-05", "mes": 6, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta malagueño", "bp": "DIMOV, JULIO LUCAS"}, {"n": "PIZA, WALTER RAMON", "g": "M", "t": "V", "m": "Mutuo acuerdo", "s": "Pta. Puesto Viejo", "f": "2026-06-01", "mes": 6, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta puesto viejo", "bp": "MARTIN, CARLOS ALBERTO"}, {"n": "DELLA VEDOVA, GIULIANA AYLEN", "g": "F", "t": "I", "m": "Fin de contrato", "s": "Pta. Malagueño", "f": "2026-06-08", "mes": 6, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta malagueño", "bp": "DIMOV, JULIO LUCAS"}, {"n": "MERCADO, MATIAS LUIS EZEQUIEL", "g": "M", "t": "V", "m": "Mutuo acuerdo", "s": "Pta. Córdoba Norte", "f": "2026-06-20", "mes": 6, "dir": "Dirección General", "ger": "Gcia. nacional armx", "bp": "FRIAS, CECILIA"}, {"n": "REALE LATINI, LUCAS AGUSTIN", "g": "M", "t": "V", "m": "Renuncia", "s": "Pta. Puesto Viejo", "f": "2026-06-30", "mes": 6, "dir": "Dirección de Operaciones Cemento", "ger": "Gcia. planta puesto viejo", "bp": "MARTIN, CARLOS ALBERTO"}];
 let DATA = DATA_DEFAULT.slice();
 
+function sucesorEstado(r) {
+  const v = (r.suc || '').trim().toLowerCase();
+  if (v === 'si' || v === 'sí') return 'si';
+  if (v === 'no') return 'no';
+  return 'sin-info';
+}
+const SUC_LABEL = { si: 'Con sucesor', no: 'Sin sucesor', 'sin-info': 'Sin información' };
+const SUC_PILL_CLASS = { si: 'suc-si', no: 'suc-no', 'sin-info': 'suc-sin' };
+
 const MES_ABR = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const MES_NOM = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 let MESES = [];
-const state = { mes: '', tipo: '', sitio: '', q: '' };
 let PERIOD_LABEL = '';
+const state = { mes: '', tipo: '', sitio: '', genero: '', sucesor: '', q: '' };
 
 const MOTIVO_MAP = {
   'Voluntary: Resignation':            ['V', 'Renuncia'],
@@ -618,24 +767,16 @@ const MOTIVO_MAP = {
   'Indefinido':                        ['S', 'Sin definir'],
 };
 const TIPO_LABEL = { V: 'Voluntaria', I: 'Involuntaria', S: 'Sin definir' };
-const SITE_MAP = {
-  'JMCE-PTA. PUESTO VIEJO': 'Pta. Puesto Viejo',
-  'JMCE-PTA. CAPDEVILLE':   'Pta. Capdeville',
-  'JMCE-PTA. CAMPANA':      'Pta. Campana',
-  'JMCE-PTA. MALAGUEÑO':    'Pta. Malagueño',
-  'JMCE-ADM. CENTRAL MG':   'Adm. Central MG',
-  'JMCE-ADM. BS.AS.':       'Adm. Bs. As.',
-  'JMHO-PTA. CÓRDOBA NORTE':'Pta. Córdoba Norte',
-  'JMHO- AÑACUA':           'Añacua',
-  'ECAF-PTA. YOCSINA':      'Pta. Yocsina',
-  'JMAG-AGR. MALAGUEÑO':    'Agr. Malagueño',
-  'ECAF-PTA. CAPDEVILLE':   'Pta. Capdeville (Ecaf)',
-  'ECAF-PUESTO VIEJO':      'Puesto Viejo (Ecaf)',
-  'JMCE-ADM. RESISTENCIA':  'Adm. Resistencia',
-  'JMCE-CBA. CAPITAL':      'Cba. Capital',
-  'JMHO-PTA. CAMPANA':      'Pta. Campana (JMHO)',
-};
 const MES_NUM_MAP = { enero:1, febrero:2, marzo:3, abril:4, mayo:5, junio:6, julio:7, agosto:8, septiembre:9, octubre:10, noviembre:11, diciembre:12 };
+/* Clave interna (no se muestra nunca) para relacionar el mismo sitio/planta entre distintos Excel
+   aunque venga escrito distinto en cada uno (mayúsculas, "S.A.", espacios). El texto que se muestra
+   en pantalla siempre es el original de la columna del Excel, tal cual — ver contexto/DetalleADicional.md. */
+function siteKey(raw) {
+  return (raw == null ? '' : String(raw))
+    .toUpperCase()
+    .replace(/\bS\.?A\.?$/, '')
+    .replace(/[^A-Z0-9]/g, ''); // saca espacios, puntos y acentos (Ñ, Á, ...) — solo para la clave interna
+}
 
 function titleDir(raw) {
   const d = (raw == null ? '' : String(raw)).trim();
@@ -676,27 +817,60 @@ function parseFecha(fechaRaw, mesTxt) {
   if (!month || !day || !year) return null;
   return { month, day, year };
 }
+/* Busca, entre las primeras filas de la hoja, la que realmente tiene los encabezados de columna
+   (los Excel de RRHH suelen traer una fila de título tipo "COMPLETA SOLO C&B" antes del header real). */
+function findHeaderRowIndex(rows, mustIncludeHeader) {
+  const target = mustIncludeHeader.toLowerCase();
+  for (let i = 0; i < Math.min(rows.length, 8); i++) {
+    const cells = (rows[i] || []).map(c => (c == null ? '' : String(c)).trim().toLowerCase());
+    if (cells.includes(target)) return i;
+  }
+  return -1;
+}
+/* La columna MES de BAJAS.xlsx ya viene como fecha (primer día del mes) o como texto "Enero" — no hay
+   una columna de "Fecha Baja" separada en el formato vigente. */
+function monthFromCell(cell) {
+  if (cell instanceof Date && !isNaN(cell)) {
+    return { year: cell.getUTCFullYear(), month: cell.getUTCMonth() + 1 };
+  }
+  const s = (cell == null ? '' : String(cell)).trim();
+  if (!s) return null;
+  const mesKey = s.toLowerCase().split(/[\s\/\-,]/)[0];
+  if (MES_NUM_MAP[mesKey]) {
+    const yearMatch = s.match(/(20\d{2})/);
+    return { year: yearMatch ? +yearMatch[1] : new Date().getFullYear(), month: MES_NUM_MAP[mesKey] };
+  }
+  const parts = s.split('/');
+  if (parts.length >= 2) {
+    const month = parseInt(parts[1], 10), year = parseInt(parts[2], 10) || new Date().getFullYear();
+    if (month >= 1 && month <= 12) return { year, month };
+  }
+  return null;
+}
 async function parseExcelFile(file) {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: 'array', cellDates: true });
-  const sheetName = wb.SheetNames.find(n => n.trim().toUpperCase() === 'BAJAS');
-  if (!sheetName) throw new Error('No se encontró una hoja llamada "BAJAS" en el archivo.');
+  const sheetName = wb.SheetNames.find(n => n.trim().toUpperCase() === 'BAJAS') || wb.SheetNames[0];
   const ws = wb.Sheets[sheetName];
   const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
-  if (!rows.length) throw new Error('La hoja BAJAS está vacía.');
-  const header = rows[0].map(h => (h == null ? '' : String(h)).trim());
+  if (!rows.length) throw new Error('La hoja está vacía.');
+  const headerRowIdx = findHeaderRowIndex(rows, 'Empleado (Cod)');
+  if (headerRowIdx === -1) throw new Error('No se encontró la fila de encabezados ("Empleado (Cod)", "Motivo medida"…) en la hoja.');
+  const header = rows[headerRowIdx].map(h => (h == null ? '' : String(h)).trim());
   const col = name => header.findIndex(h => h.toLowerCase() === name.toLowerCase());
   const idx = {
     cod: col('Empleado (Cod)'), nombre: col('Empleado'), motivo: col('Motivo medida'),
-    div: col('Div Personal'), fecha: col('Fecha Baja'), genero: col('Género'),
-    mes: col('MES'), dir: col('DIRECCION'), ger: col('GERENCIA'), bp: col('BP')
+    div: col('Div Personal'), genero: col('Género'), mes: col('MES'),
+    dir: col('DIRECCION'), ger: col('GERENCIA'), bp: col('BP'),
+    suc: col('Sucesor'), sucDetalle: col('Detalle del motivo'),
+    retencion: col('Acciones de retención'), encuesta: col('Encuesta de salida'),
   };
-  for (const k of ['cod', 'nombre', 'motivo', 'div', 'fecha', 'genero', 'mes']) {
-    if (idx[k] === -1) throw new Error(`Falta la columna requerida "${k}" en la hoja BAJAS.`);
+  for (const k of ['cod', 'nombre', 'motivo', 'div', 'genero', 'mes']) {
+    if (idx[k] === -1) throw new Error(`Falta la columna requerida "${k}" en la hoja de bajas.`);
   }
   const out = [];
   let skippedIdentity = 0, skippedFecha = 0, unclassifiedMotivo = 0;
-  for (let r = 1; r < rows.length; r++) {
+  for (let r = headerRowIdx + 1; r < rows.length; r++) {
     const row = rows[r];
     if (!row) continue;
     const cod = row[idx.cod], nombre = row[idx.nombre];
@@ -705,19 +879,19 @@ async function parseExcelFile(file) {
     const motivoRaw = (row[idx.motivo] == null ? '' : String(row[idx.motivo])).trim();
     const mm = parseMotivo(motivoRaw);
     if (mm[0] === 'S') unclassifiedMotivo++;
-    const divRaw = (row[idx.div] == null ? '' : String(row[idx.div])).trim();
-    const site = SITE_MAP[divRaw] || divRaw;
-    const mesTxt = (row[idx.mes] == null ? '' : String(row[idx.mes])).trim();
-    const parsed = parseFecha(row[idx.fecha], mesTxt);
-    if (!parsed) { skippedFecha++; continue; }
+    const site = (row[idx.div] == null ? '' : String(row[idx.div])).trim();
+    const md = monthFromCell(row[idx.mes]);
+    if (!md) { skippedFecha++; continue; }
     const bp = (row[idx.bp] == null ? '' : String(row[idx.bp])).trim() || 'Sin dato';
+    const field = i => (i === -1 || row[i] == null) ? '' : String(row[i]).trim();
     out.push({
       n: String(nombre),
       g: (row[idx.genero] == null ? '' : String(row[idx.genero])).trim() === 'Masculino' ? 'M' : 'F',
       t: mm[0],
       m: mm[1], s: site,
-      f: `${parsed.year}-${String(parsed.month).padStart(2, '0')}-${String(parsed.day).padStart(2, '0')}`,
-      mes: parsed.month, dir: titleDir(row[idx.dir]), ger: formatGerencia(row[idx.ger]), bp
+      f: `${md.year}-${String(md.month).padStart(2, '0')}-01`,
+      mes: md.month, dir: titleDir(row[idx.dir]), ger: formatGerencia(row[idx.ger]), bp,
+      suc: field(idx.suc), sucDetalle: field(idx.sucDetalle), retencion: field(idx.retencion), encuesta: field(idx.encuesta),
     });
   }
   return { records: out, skippedIdentity, skippedFecha, unclassifiedMotivo };
@@ -761,33 +935,52 @@ function initFiltersAndRender() {
   $('f-sitio').innerHTML = '<option value="">Todos</option>';
   [...new Set(DATA.map(r => r.s))].sort((a, b) => a.localeCompare(b, 'es')).forEach(s =>
     $('f-sitio').insertAdjacentHTML('beforeend', `<option value="${esc(s)}">${esc(s)}</option>`));
-  state.mes = ''; state.tipo = ''; state.sitio = ''; state.q = '';
-  $('f-mes').value = ''; $('f-tipo').value = ''; $('f-sitio').value = ''; $('q').value = '';
+  state.mes = ''; state.tipo = ''; state.sitio = ''; state.genero = ''; state.sucesor = ''; state.q = '';
+  $('f-mes').value = ''; $('f-tipo').value = ''; $('f-sitio').value = ''; $('f-sucesor').value = ''; $('q').value = '';
+  setActiveGenderCard('');
   render();
 }
-['f-mes', 'f-tipo', 'f-sitio'].forEach(id => $(id).addEventListener('change', () => {
-  state.mes = $('f-mes').value; state.tipo = $('f-tipo').value; state.sitio = $('f-sitio').value;
+['f-mes', 'f-tipo', 'f-sitio', 'f-sucesor'].forEach(id => $(id).addEventListener('change', () => {
+  state.mes = $('f-mes').value; state.tipo = $('f-tipo').value; state.sitio = $('f-sitio').value; state.sucesor = $('f-sucesor').value;
   render();
 }));
 $('f-clear').addEventListener('click', () => {
-  state.mes = state.tipo = state.sitio = '';
-  $('f-mes').value = $('f-tipo').value = $('f-sitio').value = '';
+  state.mes = state.tipo = state.sitio = state.genero = state.sucesor = '';
+  $('f-mes').value = $('f-tipo').value = $('f-sitio').value = $('f-sucesor').value = '';
+  setActiveGenderCard('');
   render();
 });
-$('q').addEventListener('input', e => { state.q = e.target.value.trim().toLowerCase(); renderTable(filtered()); });
-function filtered() {
+$('q').addEventListener('input', e => { state.q = e.target.value.trim().toLowerCase(); render(); });
+function setActiveGenderCard(g) {
+  state.genero = g;
+  ['card-g-total', 'card-g-m', 'card-g-f'].forEach(id => {
+    const el = $(id);
+    el.classList.toggle('active', el.dataset.g === g);
+  });
+}
+[$('card-g-total'), $('card-g-m'), $('card-g-f')].forEach(el => el.addEventListener('click', () => {
+  setActiveGenderCard(state.genero === el.dataset.g ? '' : el.dataset.g);
+  render();
+}));
+function searchBlob(r) {
+  return [r.n, r.s, r.dir, r.ger, r.bp, r.m, TIPO_LABEL[r.t], r.g === 'M' ? 'masculino' : 'femenino', r.f, SUC_LABEL[sucesorEstado(r)], r.sucDetalle, r.retencion, r.encuesta]
+    .filter(Boolean).join(' ').toLowerCase();
+}
+function filtered(opts) {
+  opts = opts || {};
   return DATA.filter(r =>
     (!state.mes || r.mes === +state.mes) &&
     (!state.tipo || r.t === state.tipo) &&
-    (!state.sitio || r.s === state.sitio));
+    (!state.sitio || r.s === state.sitio) &&
+    (opts.skipGenero || !state.genero || r.g === state.genero) &&
+    (!state.sucesor || sucesorEstado(r) === state.sucesor) &&
+    (!state.q || searchBlob(r).includes(state.q)));
 }
 function renderKPIs(rows) {
   const total = rows.length;
   const v = rows.filter(r => r.t === 'V').length;
   const i = rows.filter(r => r.t === 'I').length;
   const s = total - v - i;
-  $('k-total').textContent = total;
-  $('k-total-sub').textContent = (total === DATA.length ? PERIOD_LABEL : `de ${DATA.length} en el período`) + (s ? ` · ${s} sin definir` : '');
   $('k-vol').textContent = v;
   $('k-vol-sub').textContent = pct(v, total) + ' del total';
   $('k-inv').textContent = i;
@@ -797,6 +990,20 @@ function renderKPIs(rows) {
   porMes.forEach((n, m) => { if (!pico || n > pico[1]) pico = [m, n]; });
   $('k-pico').textContent = pico ? MES_NOM[pico[0]] : '–';
   $('k-pico-sub').textContent = pico ? `${pico[1]} bajas` : '';
+  const conSucesor = rows.filter(r => sucesorEstado(r) === 'si').length;
+  $('k-suc').textContent = conSucesor;
+  $('k-suc-sub').textContent = pct(conSucesor, total) + ' del total filtrado';
+}
+function renderGenderCards(rows) {
+  const total = rows.length;
+  const m = rows.filter(r => r.g === 'M').length;
+  const f = total - m;
+  $('kg-total').textContent = total;
+  $('kg-total-sub').textContent = total === DATA.length ? PERIOD_LABEL : `de ${DATA.length} en el período`;
+  $('kg-m').textContent = m;
+  $('kg-m-sub').textContent = pct(m, total) + ' del total filtrado';
+  $('kg-f').textContent = f;
+  $('kg-f-sub').textContent = pct(f, total) + ' del total filtrado';
 }
 function renderMes(rows) {
   const W = 680, H = 250, mL = 30, mR = 8, mT = 26, mB = 24;
@@ -883,16 +1090,16 @@ function renderGenero(rows) {
     <span class="row" style="display:flex;align-items:center;gap:8px;"><span class="sw i"></span>Femenino&nbsp;<b>${f}</b>&nbsp;· ${pct(f, rows.length)}</span>`;
 }
 function renderTable(rows) {
-  const q = state.q;
-  const list = rows
-    .filter(r => !q || [r.n, r.s, r.dir, r.ger, r.bp, r.m].join(' ').toLowerCase().includes(q))
-    .sort((a, b) => a.f.localeCompare(b.f));
+  const list = rows.slice().sort((a, b) => a.f.localeCompare(b.f));
   $('tbody').innerHTML = list.map(r => {
     const [y, mo, d] = r.f.split('-');
+    const suc = sucesorEstado(r);
+    const sucTip = [r.sucDetalle, r.retencion, r.encuesta].filter(Boolean).map(esc).join('<br>');
     return `<tr>
       <td>${esc(r.n)}</td><td class="num">${d}/${mo}/${y}</td>
       <td><span class="pill ${r.t}">${TIPO_LABEL[r.t] || 'Sin definir'}</span></td>
       <td>${esc(r.m)}</td><td>${esc(r.s)}</td><td>${esc(r.dir)}</td><td>${esc(r.ger)}</td><td>${esc(r.bp)}</td>
+      <td><span class="pill ${SUC_PILL_CLASS[suc]}"${sucTip ? ` data-tip="${sucTip}"` : ''}>${SUC_LABEL[suc]}</span></td>
     </tr>`;
   }).join('');
   $('tempty').hidden = list.length > 0;
@@ -900,7 +1107,8 @@ function renderTable(rows) {
 }
 function render() {
   const rows = filtered();
-  $('f-clear').classList.toggle('on', !!(state.mes || state.tipo || state.sitio));
+  $('f-clear').classList.toggle('on', !!(state.mes || state.tipo || state.sitio || state.genero || state.sucesor || state.q));
+  renderGenderCards(filtered({ skipGenero: true }));
   renderKPIs(rows);
   renderMes(rows);
   renderMotivo(rows);
@@ -931,17 +1139,18 @@ onChange('file-input', async (e) => {
   const statusEl = $('upload-status');
   statusEl.textContent = 'Procesando archivo…'; statusEl.className = 'upload-status';
   try {
-    const { records, skippedIdentity, skippedFecha, unclassifiedMotivo } = await parseExcelFile(file);
-    if (!records.length) throw new Error('No se encontraron registros válidos en la hoja BAJAS.');
+    const { records: newRecords, skippedIdentity, skippedFecha, unclassifiedMotivo } = await parseExcelFile(file);
+    if (!newRecords.length) throw new Error('No se encontraron registros válidos en la hoja de bajas.');
     if (skippedIdentity || skippedFecha) {
       throw new Error(`No se actualizó el panel: ${skippedIdentity + skippedFecha} fila(s) incompleta(s) (${skippedIdentity} sin empleado/código y ${skippedFecha} con fecha inválida). Corregí esas filas y volvé a cargar el archivo.`);
     }
+    const records = mergeRecordsByMonth(DATA, newRecords, r => r.f.slice(0, 7));
     DATA = records;
     const uploadedAt = new Date().toISOString();
     try { await window.storage.set('bajas-dataset', JSON.stringify({ records, uploadedAt, filename: file.name }), true); }
     catch (err) { throw new Error(`El archivo se procesó pero NO se guardó en el servidor (${err.message}). Los demás usuarios no van a ver este cambio: probá de nuevo.`); }
     initFiltersAndRender(); updateMeta();
-    let msg = `✓ ${records.length} registros cargados desde "${file.name}".`;
+    let msg = `✓ ${newRecords.length} registros cargados desde "${file.name}" (${records.length} en total tras combinar meses).`;
     if (unclassifiedMotivo) msg += ` ${unclassifiedMotivo} fila(s) incluida(s) como “Sin definir”.`;
     statusEl.textContent = msg; statusEl.className = 'upload-status ok';
   } catch (err) { statusEl.textContent = '⚠ ' + err.message; statusEl.className = 'upload-status err'; }
@@ -951,52 +1160,84 @@ onChange('file-input', async (e) => {
 /* ================================================================ */
 /* VISTA: COMPARACIÓN HEADCOUNT VS MTP                               */
 /* ================================================================ */
-const MTP_MES_NOM = ['Enero','Febrero','Marzo','Abril','Mayo','Junio'];
-const MTP_MES_ABR = ['Ene','Feb','Mar','Abr','May','Jun'];
-const MTP_PLANT_LABELS = {
-  'CAPDEVILLE': 'Pta. Capdeville', 'CAMPANA': 'Pta. Campana', 'MALAGUEÑO': 'Pta. Malagueño',
-  'PUESTO VIEJO': 'Pta. Puesto Viejo', 'AÑACUA': 'Añacua', 'RMX': 'RMX',
-  'CORPO': 'Corpo', 'AGREGADOS': 'Agregados', 'GEOCYCLE': 'Geocycle',
-};
+/* A partir de FTE.xlsx los meses ya no son un rango fijo Ene–Jun: cada planta guarda un objeto
+   `meses` con una entrada por mes (clave en minúscula: "enero", "febrero", ...), y el blueprint
+   es un valor fijo por planta (no cambia mes a mes en el Excel de origen). */
+const MTP_MESES_FIJOS_DEFAULT = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio'];
+const MTP_DATA_DEFAULT_OLD = [{"planta":"Pta. Capdeville","baseline":148,"real":[174,175,175,173,177,178],"mtp":[174,175,175,173,177,178],"blueprint":153},{"planta":"Pta. Campana","baseline":90,"real":[100,101,100,96,99,99],"mtp":[100,101,100,96,99,99],"blueprint":92},{"planta":"Pta. Malagueño","baseline":222,"real":[269,270,269,268,264,262],"mtp":[269,270,269,268,264,264],"blueprint":159},{"planta":"Pta. Puesto Viejo","baseline":139,"real":[189,189,187,186,182,180],"mtp":[189,189,187,186,182,182],"blueprint":143},{"planta":"Añacua","baseline":8,"real":[13,12,13,12,15,17],"mtp":[13,12,13,12,15,18],"blueprint":null},{"planta":"RMX","baseline":49,"real":[52,55,56,57,60,59],"mtp":[52,55,56,57,60,60],"blueprint":null},{"planta":"Corpo","baseline":200,"real":[156,154,153,151,153,155],"mtp":[156,154,153,151,153,153],"blueprint":null},{"planta":"Agregados","baseline":25,"real":[25,24,24,24,24,25],"mtp":[25,24,24,24,24,26],"blueprint":null},{"planta":"Geocycle","baseline":56,"real":[55,55,54,54,54,53],"mtp":[55,55,54,54,54,54],"blueprint":null}];
+function mtpDefaultToNested(arr) {
+  return arr.map(p => {
+    const meses = {};
+    MTP_MESES_FIJOS_DEFAULT.forEach((mesKey, i) => { meses[mesKey] = { baseline: p.baseline, real: p.real[i] || 0, mtp: p.mtp[i] || 0 }; });
+    return { planta: p.planta, blueprint: p.blueprint, meses };
+  });
+}
+let MTP_DATA = mtpDefaultToNested(MTP_DATA_DEFAULT_OLD);
+const mtpState = { mes: null, q: '' };
 
-const MTP_DATA_DEFAULT = [{"planta":"Pta. Capdeville","baseline":148,"real":[174,175,175,173,177,178],"mtp":[174,175,175,173,177,178],"blueprint":153},{"planta":"Pta. Campana","baseline":90,"real":[100,101,100,96,99,99],"mtp":[100,101,100,96,99,99],"blueprint":92},{"planta":"Pta. Malagueño","baseline":222,"real":[269,270,269,268,264,262],"mtp":[269,270,269,268,264,264],"blueprint":159},{"planta":"Pta. Puesto Viejo","baseline":139,"real":[189,189,187,186,182,180],"mtp":[189,189,187,186,182,182],"blueprint":143},{"planta":"Añacua","baseline":8,"real":[13,12,13,12,15,17],"mtp":[13,12,13,12,15,18],"blueprint":null},{"planta":"RMX","baseline":49,"real":[52,55,56,57,60,59],"mtp":[52,55,56,57,60,60],"blueprint":null},{"planta":"Corpo","baseline":200,"real":[156,154,153,151,153,155],"mtp":[156,154,153,151,153,153],"blueprint":null},{"planta":"Agregados","baseline":25,"real":[25,24,24,24,24,25],"mtp":[25,24,24,24,24,26],"blueprint":null},{"planta":"Geocycle","baseline":56,"real":[55,55,54,54,54,53],"mtp":[55,55,54,54,54,54],"blueprint":null}];
-let MTP_DATA = MTP_DATA_DEFAULT.slice();
-const mtpState = { mes: 5, q: '' };
-
+function mesLabel(mesKey) { return mesKey ? mesKey.charAt(0).toUpperCase() + mesKey.slice(1) : '–'; }
+function mtpMesesList() {
+  const set = new Set();
+  MTP_DATA.forEach(p => Object.keys(p.meses || {}).forEach(k => set.add(k)));
+  return [...set].sort((a, b) => (MES_NUM_MAP[a] || 0) - (MES_NUM_MAP[b] || 0));
+}
+function mtpEntry(p, mesKey) { return (p.meses && p.meses[mesKey]) || { baseline: 0, real: 0, mtp: 0 }; }
 /* Objetivo del bloque general = MTP siempre (todas las plantas), sin usar Blueprint. */
-function mtpObjetivo(p, mi) { return p.mtp[mi] || 0; }
-function mtpTotalsFor(mi) {
+function mtpObjetivo(p, mesKey) { return mtpEntry(p, mesKey).mtp || 0; }
+function mtpTotalsFor(mesKey) {
   let real = 0, objetivo = 0, baseline = 0;
-  MTP_DATA.forEach(p => { real += p.real[mi] || 0; objetivo += mtpObjetivo(p, mi); baseline += p.baseline || 0; });
+  MTP_DATA.forEach(p => { const e = mtpEntry(p, mesKey); real += e.real || 0; objetivo += e.mtp || 0; baseline += e.baseline || 0; });
   return { real, objetivo, baseline, gap: real - objetivo, gapBase: real - baseline };
 }
 function mtpRenderKPIs() {
-  const mi = mtpState.mes;
-  const { real, objetivo, baseline, gap, gapBase } = mtpTotalsFor(mi);
+  const mesKey = mtpState.mes;
+  const { real, objetivo, baseline, gap, gapBase } = mtpTotalsFor(mesKey);
   $('mtp-k-real').textContent = real;
-  $('mtp-k-real-sub').textContent = MTP_MES_NOM[mi] + ' 2026';
+  $('mtp-k-real-sub').textContent = mesLabel(mesKey) + ' 2026';
   const baseEl = $('mtp-k-base');
   baseEl.textContent = (gapBase > 0 ? '+' : '') + gapBase;
-  baseEl.className = 'val ' + (gapBase >= 0 ? 'pos' : 'neg');
+  baseEl.className = 'val ' + (gapBase > 0 ? 'pos' : gapBase < 0 ? 'neg' : 'neutral');
   $('mtp-k-base-sub').textContent = `vs. ${baseline} al 31/12/25`;
   const gapEl = $('mtp-k-gap');
   gapEl.textContent = (gap > 0 ? '+' : '') + gap;
-  gapEl.className = 'val ' + (gap >= 0 ? 'pos' : 'neg');
-  $('mtp-k-gap-sub').textContent = gap >= 0 ? 'headcount por encima del MTP' : 'headcount por debajo del MTP';
+  gapEl.className = 'val ' + (gap > 0 ? 'pos' : gap < 0 ? 'neg' : 'neutral');
+  $('mtp-k-gap-sub').textContent = gap > 0 ? 'headcount por encima del MTP' : gap < 0 ? 'headcount por debajo del MTP' : 'headcount igual al MTP';
   const pctEl = $('mtp-k-pct');
   const cumplimiento = objetivo ? Math.round(real / objetivo * 100) : 0;
   pctEl.textContent = cumplimiento + '%';
-  pctEl.className = 'val ' + (cumplimiento >= 100 ? 'pos' : (cumplimiento >= 97 ? '' : 'neg'));
+  pctEl.className = 'val ' + (cumplimiento > 100 ? 'pos' : cumplimiento < 100 ? 'neg' : 'neutral');
   $('mtp-k-pct-sub').textContent = 'Real / MTP — todas las plantas';
 }
+function mtpRenderCrecimiento() {
+  const meses = mtpMesesList();
+  const primerMes = meses.includes('enero') ? 'enero' : meses[0];
+  const actualMes = mtpState.mes;
+  const dotActual = mtpTotalsFor(actualMes).real;
+  const dotEnero = primerMes ? mtpTotalsFor(primerMes).real : 0;
+  const diff = dotActual - dotEnero;
+  const variacion = dotEnero ? (diff / dotEnero * 100) : 0;
+  $('mtp-k-actual').textContent = dotActual;
+  $('mtp-k-actual-sub').textContent = mesLabel(actualMes) + ' 2026';
+  $('mtp-k-enero').textContent = dotEnero;
+  $('mtp-k-enero-sub').textContent = mesLabel(primerMes) + ' 2026';
+  const diffEl = $('mtp-k-diff');
+  diffEl.textContent = (diff > 0 ? '+' : '') + diff;
+  diffEl.className = 'val ' + (diff > 0 ? 'pos' : diff < 0 ? 'neg' : 'neutral');
+  $('mtp-k-diff-sub').textContent = 'personas vs. enero';
+  const varEl = $('mtp-k-var');
+  varEl.textContent = (variacion > 0 ? '+' : '') + variacion.toFixed(1) + '%';
+  varEl.className = 'val ' + (variacion > 0 ? 'pos' : variacion < 0 ? 'neg' : 'neutral');
+  $('mtp-k-var-sub').textContent = 'variación vs. enero';
+}
 function mtpRenderTrend() {
+  const meses = mtpMesesList();
   const W = 680, H = 250, mL = 34, mR = 8, mT = 20, mB = 24;
   const iw = W - mL - mR, ih = H - mT - mB;
-  const perMes = [0, 1, 2, 3, 4, 5].map(mi => mtpTotalsFor(mi));
+  const perMes = meses.map(mesKey => mtpTotalsFor(mesKey));
   const maxV = Math.max(...perMes.map(d => Math.max(d.real, d.objetivo, d.baseline)), 1);
   const yMax = Math.ceil(maxV / 50) * 50 || 50;
   const y = v => mT + ih - (v / yMax) * ih;
-  const step = iw / 6;
+  const step = iw / (meses.length || 1);
   const px = idx => mL + step * idx + step / 2;
   let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Evolución Real vs MTP vs Línea base por mes">`;
   for (let t = 0; t <= yMax; t += Math.ceil(yMax / 4 / 50) * 50 || 50) {
@@ -1015,21 +1256,22 @@ function mtpRenderTrend() {
   /* Real — sólida, encima de todo */
   s += `<path d="${pathFor('real')}" fill="none" stroke="var(--i)" stroke-width="2"/>`;
   perMes.forEach((pt, idx) => {
+    const mesKey = meses[idx];
     s += `<circle cx="${px(idx)}" cy="${y(pt.baseline)}" r="2.5" fill="var(--muted)"/>`;
     s += `<circle cx="${px(idx)}" cy="${y(pt.objetivo)}" r="3" fill="var(--v)"/>`;
     s += `<circle cx="${px(idx)}" cy="${y(pt.real)}" r="3" fill="var(--i)"/>`;
-    s += `<text x="${px(idx)}" y="${H - 6}" text-anchor="middle" font-size="11.5" fill="var(--muted)">${MTP_MES_ABR[idx]}</text>`;
-    s += `<rect x="${mL + step * idx}" y="${mT}" width="${step}" height="${ih}" fill="transparent" data-tip="${esc(`<b>${MTP_MES_NOM[idx]}</b><br>Real: <b>${pt.real}</b> · MTP: <b>${pt.objetivo}</b> · Línea base: <b>${pt.baseline}</b>`)}"/>`;
+    s += `<text x="${px(idx)}" y="${H - 6}" text-anchor="middle" font-size="11.5" fill="var(--muted)">${MES_ABR[MES_NUM_MAP[mesKey]] || mesKey}</text>`;
+    s += `<rect x="${mL + step * idx}" y="${mT}" width="${step}" height="${ih}" fill="transparent" data-tip="${esc(`<b>${mesLabel(mesKey)}</b><br>Real: <b>${pt.real}</b> · MTP: <b>${pt.objetivo}</b> · Línea base: <b>${pt.baseline}</b>`)}"/>`;
   });
   s += '</svg>';
   $('mtp-c-trend').innerHTML = s;
 }
 function mtpRenderBlueprint() {
-  const mi = mtpState.mes;
+  const mesKey = mtpState.mes;
   const plants = MTP_DATA.filter(p => p.blueprint != null);
   const W = 680, H = 260, mL = 34, mR = 8, mT = 24, mB = 30;
   const iw = W - mL - mR, ih = H - mT - mB;
-  const maxV = Math.max(...plants.flatMap(p => [p.real[mi] || 0, p.blueprint, p.mtp[mi] || 0]), 1);
+  const maxV = Math.max(...plants.flatMap(p => [mtpEntry(p, mesKey).real || 0, p.blueprint, mtpEntry(p, mesKey).mtp || 0]), 1);
   const yMax = Math.ceil(maxV / 20) * 20 || 20;
   const y = v => mT + ih - (v / yMax) * ih;
   const step = iw / (plants.length || 1);
@@ -1043,7 +1285,8 @@ function mtpRenderBlueprint() {
   plants.forEach((p, idx) => {
     const cx = mL + step * idx + step / 2;
     const gx = cx - groupW / 2;
-    const real = p.real[mi] || 0, bp = p.blueprint, m = p.mtp[mi] || 0;
+    const e = mtpEntry(p, mesKey);
+    const real = e.real || 0, bp = p.blueprint, m = e.mtp || 0;
     const tip = esc(`<b>${p.planta}</b><br>Real: <b>${real}</b><br>Blueprint: <b>${bp}</b> (dif: <b>${real - bp > 0 ? '+' : ''}${real - bp}</b>)<br>MTP: <b>${m}</b>`);
     [['real', real, 'var(--i)'], ['blueprint', bp, '#c0392b'], ['mtp', m, 'var(--v)']].forEach(([k, val, color], bi) => {
       const bx = gx + bi * (barW + 3);
@@ -1051,21 +1294,22 @@ function mtpRenderBlueprint() {
       s += `<rect x="${bx}" y="${y(val)}" width="${barW}" height="${Math.max(bh, 1.5)}" rx="2" fill="${color}" data-tip="${tip}"/>`;
       s += `<text x="${bx + barW / 2}" y="${y(val) - 5}" text-anchor="middle" font-size="10" fill="var(--ink-2)">${val}</text>`;
     });
-    s += `<text x="${cx}" y="${H - 10}" text-anchor="middle" font-size="11.5" fill="var(--muted)">${esc(p.planta.replace('Pta. ', ''))}</text>`;
+    s += `<text x="${cx}" y="${H - 10}" text-anchor="middle" font-size="11.5" fill="var(--muted)">${esc(p.planta)}</text>`;
   });
   s += '</svg>';
   $('mtp-c-blueprint').innerHTML = s;
 }
 function mtpRenderBlueprintTable() {
-  const mi = mtpState.mes;
+  const mesKey = mtpState.mes;
   const plants = MTP_DATA.filter(p => p.blueprint != null);
   $('mtp-bp-tbody').innerHTML = plants.map(p => {
-    const real = p.real[mi] || 0, mtp = p.mtp[mi] || 0, bp = p.blueprint;
+    const e = mtpEntry(p, mesKey);
+    const real = e.real || 0, mtp = e.mtp || 0, bp = p.blueprint;
     const gap = real - bp;
     const cumpl = bp ? Math.round(real / bp * 100) : 0;
     return `<tr>
       <td>${esc(p.planta)}</td>
-      <td class="num">${p.baseline}</td>
+      <td class="num">${e.baseline || 0}</td>
       <td class="num">${real}</td>
       <td class="num">${mtp}</td>
       <td class="num">${bp}</td>
@@ -1075,31 +1319,33 @@ function mtpRenderBlueprintTable() {
   }).join('');
 }
 function mtpRenderEstandar() {
-  const mi = mtpState.mes;
+  const mesKey = mtpState.mes;
   const items = MTP_DATA.map(p => {
-    const gap = (p.real[mi] || 0) - (p.mtp[mi] || 0);
-    return { label: p.planta, n: gap, tip: `<b>${esc(p.planta)}</b><br>MTP: <b>${p.mtp[mi] || 0}</b> · Real: <b>${p.real[mi] || 0}</b> · Dif: <b>${gap > 0 ? '+' : ''}${gap}</b>`, color: gap >= 0 ? 'var(--i)' : 'var(--neg)' };
+    const e = mtpEntry(p, mesKey);
+    const gap = (e.real || 0) - (e.mtp || 0);
+    return { label: p.planta, n: gap, tip: `<b>${esc(p.planta)}</b><br>MTP: <b>${e.mtp || 0}</b> · Real: <b>${e.real || 0}</b> · Dif: <b>${gap > 0 ? '+' : ''}${gap}</b>`, color: gap >= 0 ? 'var(--i)' : 'var(--neg)' };
   }).sort((a, b) => a.n - b.n);
   renderHBars($('mtp-c-estandar'), items);
 }
 function mtpRenderDist() {
-  const mi = mtpState.mes;
-  const items = MTP_DATA.map(p => ({ label: p.planta, n: p.real[mi] || 0, total: 0, color: 'var(--v)' }))
+  const mesKey = mtpState.mes;
+  const items = MTP_DATA.map(p => ({ label: p.planta, n: mtpEntry(p, mesKey).real || 0, total: 0, color: 'var(--v)' }))
     .sort((a, b) => b.n - a.n);
   const totalReal = items.reduce((a, d) => a + d.n, 0);
   items.forEach(d => d.total = totalReal);
   renderBajasHBars($('mtp-c-dist'), items, 'del headcount total');
 }
 function mtpRenderTable() {
-  const mi = mtpState.mes;
+  const mesKey = mtpState.mes;
   const q = mtpState.q;
   const list = MTP_DATA.filter(p => !q || p.planta.toLowerCase().includes(q));
   $('mtp-tbody').innerHTML = list.map(p => {
-    const real = p.real[mi] || 0, objetivo = mtpObjetivo(p, mi), gap = real - objetivo;
+    const e = mtpEntry(p, mesKey);
+    const real = e.real || 0, objetivo = mtpObjetivo(p, mesKey), gap = real - objetivo;
     const tipo = p.blueprint != null ? 'Blueprint*' : 'Estándar';
     return `<tr>
       <td>${esc(p.planta)}</td><td>${tipo}</td>
-      <td class="num">${p.baseline}</td><td class="num">${real}</td><td class="num">${objetivo}</td>
+      <td class="num">${e.baseline || 0}</td><td class="num">${real}</td><td class="num">${objetivo}</td>
       <td class="num"><span class="pill ${gap >= 0 ? 'pos' : 'neg'}">${gap > 0 ? '+' : ''}${gap}</span></td>
     </tr>`;
   }).join('');
@@ -1107,20 +1353,22 @@ function mtpRenderTable() {
   $('mtp-tcount').textContent = `${list.length} de ${MTP_DATA.length} plantas`;
 }
 function mtpRenderFooter() {
-  $('mtp-footer-text').textContent = `Elaborado a partir de la planilla de headcount (${MTP_DATA.length} plantas). El % de cumplimiento general (Bloque 1) compara Real vs. MTP para todas las plantas, sin usar Blueprint. Capdeville, Campana, Malagueño y Puesto Viejo (marcadas "Blueprint*" en la tabla) tienen además un valor Blueprint fijo asignado, comparado por separado en el Bloque 2 — esa comparación no modifica el % de cumplimiento general. La "Línea base" corresponde a la dotación al 31/12/2025.`;
+  $('mtp-footer-text').textContent = `Elaborado a partir de la planilla de headcount (${MTP_DATA.length} plantas). El % de cumplimiento general (Bloque 1) compara Real vs. MTP para todas las plantas, sin usar Blueprint. Las plantas marcadas "Blueprint*" en la tabla tienen además un valor Blueprint fijo asignado, comparado por separado en el Bloque 2 — esa comparación no modifica el % de cumplimiento general. La "Línea base" corresponde a la dotación al 31/12/2025.`;
 }
 function mtpInitFiltersAndRender() {
-  const lastMi = MTP_MES_NOM.length - 1;
-  mtpState.mes = lastMi; mtpState.q = '';
-  $('mtp-f-mes').innerHTML = MTP_MES_NOM.map((n, i) => `<option value="${i}">${n}</option>`).join('');
-  $('mtp-f-mes').value = lastMi;
+  const meses = mtpMesesList();
+  const lastMes = meses.length ? meses[meses.length - 1] : null;
+  mtpState.mes = lastMes; mtpState.q = '';
+  $('mtp-f-mes').innerHTML = meses.map(k => `<option value="${k}">${mesLabel(k)}</option>`).join('');
+  $('mtp-f-mes').value = lastMes || '';
   $('mtp-q').value = '';
-  $('mtp-h1').textContent = `Headcount Real vs MTP — ${MTP_MES_NOM[lastMi]} 2026`;
+  $('mtp-h1').textContent = `Headcount Real vs MTP — ${mesLabel(lastMes)} 2026`;
   mtpRenderFooter();
   mtpRender();
 }
 function mtpRender() {
   mtpRenderKPIs();
+  mtpRenderCrecimiento();
   mtpRenderTrend();
   mtpRenderBlueprint();
   mtpRenderBlueprintTable();
@@ -1129,8 +1377,8 @@ function mtpRender() {
   mtpRenderTable();
 }
 $('mtp-f-mes').addEventListener('change', () => {
-  mtpState.mes = +$('mtp-f-mes').value;
-  $('mtp-h1').textContent = `Headcount Real vs MTP — ${MTP_MES_NOM[mtpState.mes]} 2026`;
+  mtpState.mes = $('mtp-f-mes').value;
+  $('mtp-h1').textContent = `Headcount Real vs MTP — ${mesLabel(mtpState.mes)} 2026`;
   mtpRender();
 });
 $('mtp-q').addEventListener('input', e => { mtpState.q = e.target.value.trim().toLowerCase(); mtpRenderTable(); });
@@ -1138,30 +1386,58 @@ $('mtp-q').addEventListener('input', e => { mtpState.q = e.target.value.trim().t
 async function mtpParseExcelFile(file) {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: 'array', cellDates: true });
-  const sheetName = wb.SheetNames.find(n => n.trim().toLowerCase() === 'sheet5') || wb.SheetNames[0];
+  const sheetName = wb.SheetNames.find(n => n.trim().toLowerCase() === 'fte') || wb.SheetNames[0];
   const ws = wb.Sheets[sheetName];
   const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
   if (!rows.length) throw new Error('La hoja está vacía.');
+  const headerRowIdx = findHeaderRowIndex(rows, 'PLANTAS');
+  if (headerRowIdx === -1) throw new Error('No se encontró la fila de encabezados ("PLANTAS", "headcount <mes>"…) en la hoja.');
+  const header = rows[headerRowIdx];
+  /* arma los bloques de 4 columnas por mes leyendo el nombre real del mes de "headcount <mes>" */
+  const blocks = [];
+  for (let c = 1; c < header.length; c++) {
+    const h = (header[c] == null ? '' : String(header[c])).trim().toLowerCase();
+    const m = h.match(/^headcount\s+(.+)$/);
+    if (m && MES_NUM_MAP[m[1].trim()]) {
+      blocks.push({ mesKey: m[1].trim(), colBaseline: c - 1, colReal: c, colMtp: c + 1, colBlueprint: c + 2 });
+    }
+  }
+  if (!blocks.length) throw new Error('No se encontraron columnas "headcount <mes>" en la hoja.');
   const out = [];
-  for (let r = 1; r < rows.length; r++) {
+  for (let r = headerRowIdx + 1; r < rows.length; r++) {
     const row = rows[r];
     if (!row || row[0] == null || String(row[0]).trim() === '') continue;
-    const nameRaw = String(row[0]).trim();
-    const label = MTP_PLANT_LABELS[nameRaw.toUpperCase()] || nameRaw;
-    let baseline = 0, blueprint = null;
-    const real = [], mtp = [];
-    for (let mi = 0; mi < 6; mi++) {
-      const base = 1 + mi * 4;
-      const b = row[base], re_ = row[base + 1], m = row[base + 2], bp = row[base + 3];
-      if (typeof b === 'number') baseline = b;
-      real.push(typeof re_ === 'number' ? re_ : 0);
-      mtp.push(typeof m === 'number' ? m : 0);
-      if (typeof bp === 'number') blueprint = bp;
-    }
-    out.push({ planta: label, baseline, real, mtp, blueprint });
+    const planta = String(row[0]).trim();
+    const meses = {};
+    let blueprintFijo = null;
+    blocks.forEach(b => {
+      const baseline = row[b.colBaseline], real = row[b.colReal], mtp = row[b.colMtp], bp = row[b.colBlueprint];
+      meses[b.mesKey] = {
+        baseline: typeof baseline === 'number' ? baseline : 0,
+        real: typeof real === 'number' ? real : 0,
+        mtp: typeof mtp === 'number' ? mtp : 0,
+      };
+      if (typeof bp === 'number') blueprintFijo = bp;
+    });
+    out.push({ planta, blueprint: blueprintFijo, meses });
   }
   if (!out.length) throw new Error('No se encontraron filas de plantas válidas en la hoja.');
   return out;
+}
+/* Los meses que trae el archivo nuevo reemplazan a los que ya había para esa planta; los meses que
+   no vienen en el archivo nuevo se conservan. Una planta nueva se agrega completa. */
+function mergeMtpByMonth(oldData, newData) {
+  if (!oldData || !oldData.length) return newData;
+  const byPlant = new Map(oldData.map(p => [siteKey(p.planta), p]));
+  newData.forEach(np => {
+    const key = siteKey(np.planta);
+    const existing = byPlant.get(key);
+    if (!existing) { byPlant.set(key, np); return; }
+    Object.assign(existing.meses, np.meses);
+    if (np.blueprint != null) existing.blueprint = np.blueprint;
+    existing.planta = np.planta;
+  });
+  return [...byPlant.values()];
 }
 async function mtpInit() {
   try {
@@ -1184,13 +1460,14 @@ onChange('mtp-file-input', async (e) => {
   const statusEl = $('mtp-upload-status');
   statusEl.textContent = 'Procesando archivo…'; statusEl.className = 'upload-status';
   try {
-    const records = await mtpParseExcelFile(file);
+    const newRecords = await mtpParseExcelFile(file);
+    const records = mergeMtpByMonth(MTP_DATA, newRecords);
     MTP_DATA = records;
     const uploadedAt = new Date().toISOString();
     try { await window.storage.set('mtp-dataset', JSON.stringify({ records, uploadedAt, filename: file.name }), true); }
     catch (err) { throw new Error(`El archivo se procesó pero NO se guardó en el servidor (${err.message}). Los demás usuarios no van a ver este cambio: probá de nuevo.`); }
     mtpInitFiltersAndRender();
-    statusEl.textContent = `✓ ${records.length} plantas cargadas desde "${file.name}".`;
+    statusEl.textContent = `✓ ${newRecords.length} planta(s) actualizadas desde "${file.name}" (${records.length} plantas en total).`;
     statusEl.className = 'upload-status ok';
   } catch (err) { statusEl.textContent = '⚠ ' + err.message; statusEl.className = 'upload-status err'; }
   e.target.value = '';
@@ -1203,64 +1480,105 @@ const ALTAS_DATA_DEFAULT = [{"n":"ESCUDERO, ANGEL LEONARDO","g":"M","mo":"Adquis
 let ALTAS_DATA = ALTAS_DATA_DEFAULT.slice();
 let ALTAS_MESES = [];
 
-/* Base "Nómina al 31 de enero 2026" por planta (tabla dinámica provista por Ana) — punto de partida
-   para la evolución de % de mujeres; a esto se le suman las altas acumuladas mes a mes. */
-const NOMINA_ENERO_MAP = {
-  'Pta. Capdeville (Ecaf)': { f: 0,  m: 3,   tot: 3 },
-  'Pta. Yocsina':           { f: 11, m: 38,  tot: 49 },
-  'Puesto Viejo (Ecaf)':    { f: 0,  m: 1,   tot: 1 },
-  'Agr. Malagueño':         { f: 3,  m: 20,  tot: 23 },
-  'Adm. Bs. As.':           { f: 0,  m: 2,   tot: 2 },
-  'Adm. Central MG':        { f: 78, m: 88,  tot: 166 },
-  'Adm. Resistencia':       { f: 1,  m: 1,   tot: 2 },
-  'Cba. Capital':           { f: 2,  m: 9,   tot: 11 },
-  'Pta. Campana':           { f: 14, m: 81,  tot: 95 },
-  'Pta. Capdeville':        { f: 20, m: 136, tot: 156 },
-  'Pta. Malagueño':         { f: 45, m: 222, tot: 267 },
-  'Pta. Puesto Viejo':      { f: 20, m: 166, tot: 186 },
-  'Añacua':                 { f: 1,  m: 12,  tot: 13 },
-  'Pta. Campana (JMHO)':    { f: 1,  m: 6,   tot: 7 },
-  'Pta. Córdoba Norte':     { f: 8,  m: 45,  tot: 53 },
-};
-const NOMINA_ENERO_TOTAL = Object.values(NOMINA_ENERO_MAP).reduce(
-  (acc, v) => ({ f: acc.f + v.f, m: acc.m + v.m, tot: acc.tot + v.tot }), { f: 0, m: 0, tot: 0 });
-
-/* Nómina real por planta y género para febrero-junio 2026 (pivots "NOMINA <MES>" de la hoja ALTAS).
-   Reemplaza la estimación por altas−bajas: esto es la dotación real cerrada de cada mes. */
-const NOMINA_MENSUAL_MAP = {"2":{"Pta. Capdeville (Ecaf)":{"f":0,"m":3,"tot":3},"Pta. Yocsina":{"f":11,"m":38,"tot":49},"Puesto Viejo (Ecaf)":{"f":0,"m":1,"tot":1},"Agr. Malagueño":{"f":3,"m":20,"tot":23},"Adm. Bs. As.":{"f":0,"m":2,"tot":2},"Adm. Central MG":{"f":75,"m":88,"tot":163},"Adm. Resistencia":{"f":1,"m":1,"tot":2},"Cba. Capital":{"f":2,"m":8,"tot":10},"Pta. Campana":{"f":14,"m":82,"tot":96},"Pta. Capdeville":{"f":20,"m":136,"tot":156},"Pta. Malagueño":{"f":45,"m":223,"tot":268},"Pta. Puesto Viejo":{"f":20,"m":167,"tot":187},"Añacua":{"f":1,"m":11,"tot":12},"Pta. Campana (JMHO)":{"f":1,"m":6,"tot":7},"Pta. Córdoba Norte":{"f":8,"m":48,"tot":56}},"3":{"Pta. Capdeville (Ecaf)":{"f":0,"m":3,"tot":3},"Pta. Yocsina":{"f":11,"m":37,"tot":48},"Puesto Viejo (Ecaf)":{"f":0,"m":1,"tot":1},"Agr. Malagueño":{"f":3,"m":20,"tot":23},"Adm. Bs. As.":{"f":0,"m":1,"tot":1},"Adm. Central MG":{"f":75,"m":88,"tot":163},"Adm. Resistencia":{"f":1,"m":1,"tot":2},"Cba. Capital":{"f":2,"m":8,"tot":10},"Pta. Campana":{"f":14,"m":81,"tot":95},"Pta. Capdeville":{"f":19,"m":137,"tot":156},"Pta. Malagueño":{"f":44,"m":223,"tot":267},"Pta. Puesto Viejo":{"f":19,"m":166,"tot":185},"Añacua":{"f":1,"m":12,"tot":13},"Pta. Campana (JMHO)":{"f":1,"m":6,"tot":7},"Pta. Córdoba Norte":{"f":8,"m":49,"tot":57}},"4":{"Pta. Capdeville (Ecaf)":{"f":0,"m":3,"tot":3},"Pta. Yocsina":{"f":11,"m":37,"tot":48},"Puesto Viejo (Ecaf)":{"f":0,"m":1,"tot":1},"Agr. Malagueño":{"f":3,"m":20,"tot":23},"Adm. Bs. As.":{"f":0,"m":2,"tot":2},"Adm. Central MG":{"f":76,"m":89,"tot":165},"Adm. Resistencia":{"f":1,"m":1,"tot":2},"Cba. Capital":{"f":2,"m":8,"tot":10},"Pta. Campana":{"f":14,"m":79,"tot":93},"Pta. Capdeville":{"f":19,"m":136,"tot":155},"Pta. Malagueño":{"f":43,"m":221,"tot":264},"Pta. Puesto Viejo":{"f":19,"m":165,"tot":184},"Añacua":{"f":1,"m":14,"tot":15},"Pta. Campana (JMHO)":{"f":1,"m":6,"tot":7},"Pta. Córdoba Norte":{"f":8,"m":50,"tot":58}},"5":{"Pta. Capdeville (Ecaf)":{"f":0,"m":3,"tot":3},"Pta. Yocsina":{"f":10,"m":38,"tot":48},"Puesto Viejo (Ecaf)":{"f":0,"m":1,"tot":1},"Agr. Malagueño":{"f":3,"m":20,"tot":23},"Adm. Bs. As.":{"f":0,"m":1,"tot":1},"Adm. Central MG":{"f":76,"m":90,"tot":166},"Adm. Resistencia":{"f":1,"m":1,"tot":2},"Cba. Capital":{"f":2,"m":8,"tot":10},"Pta. Campana":{"f":15,"m":80,"tot":95},"Pta. Capdeville":{"f":20,"m":139,"tot":159},"Pta. Malagueño":{"f":43,"m":217,"tot":260},"Pta. Puesto Viejo":{"f":19,"m":160,"tot":179},"Añacua":{"f":1,"m":14,"tot":15},"Pta. Campana (JMHO)":{"f":1,"m":6,"tot":7},"Pta. Córdoba Norte":{"f":8,"m":51,"tot":59}},"6":{"Pta. Capdeville (Ecaf)":{"f":0,"m":3,"tot":3},"Pta. Yocsina":{"f":9,"m":38,"tot":47},"Puesto Viejo (Ecaf)":{"f":0,"m":1,"tot":1},"Agr. Malagueño":{"f":3,"m":21,"tot":24},"Adm. Bs. As.":{"f":0,"m":1,"tot":1},"Adm. Central MG":{"f":78,"m":91,"tot":169},"Adm. Resistencia":{"f":1,"m":1,"tot":2},"Cba. Capital":{"f":2,"m":8,"tot":10},"Pta. Campana":{"f":15,"m":80,"tot":95},"Pta. Capdeville":{"f":21,"m":138,"tot":159},"Pta. Malagueño":{"f":42,"m":216,"tot":258},"Pta. Puesto Viejo":{"f":19,"m":158,"tot":177},"Añacua":{"f":1,"m":17,"tot":18},"Pta. Campana (JMHO)":{"f":1,"m":6,"tot":7},"Pta. Córdoba Norte":{"f":8,"m":50,"tot":58}}};
-function altasNominaFor(mi, site) {
-  if (mi === 1) return site ? (NOMINA_ENERO_MAP[site] || { f: 0, m: 0, tot: 0 }) : NOMINA_ENERO_TOTAL;
-  const monthData = NOMINA_MENSUAL_MAP[mi] || {};
-  if (!site) {
-    return Object.values(monthData).reduce((acc, v) => ({ f: acc.f + v.f, m: acc.m + v.m, tot: acc.tot + v.tot }), { f: 0, m: 0, tot: 0 });
+/* ================================================================ */
+/* % MUJERES: dotación real por planta y género, mes a mes.          */
+/* Viene de un Excel aparte (% MUJERES.xlsx, pivots "NOMINA <mes>")  */
+/* y reemplaza cualquier estimación por altas−bajas: es la dotación  */
+/* real de cierre de cada mes, tal como la reporta C&B.              */
+/* ================================================================ */
+let MUJERES_DATA = {}; // { 'enero': [{site,f,m,tot}, ...], 'febrero': [...] }
+function mujeresMonthKeys() {
+  return Object.keys(MUJERES_DATA).sort((a, b) => (MES_NUM_MAP[a] || 0) - (MES_NUM_MAP[b] || 0));
+}
+function mujeresSiteList() {
+  const map = new Map(); // siteKey -> fila representativa (la de mayor dotación vista)
+  mujeresMonthKeys().forEach(k => (MUJERES_DATA[k] || []).forEach(row => {
+    if (siteKey(row.site) === 'TOTALCIA') return;
+    const sk = siteKey(row.site);
+    if (!map.has(sk) || row.tot > map.get(sk).tot) map.set(sk, row);
+  }));
+  return [...map.values()].sort((a, b) => b.tot - a.tot).map(v => v.site);
+}
+function mujeresFor(mesNum, siteRaw) {
+  const mesLabel = MES_NOM[mesNum] ? MES_NOM[mesNum].toLowerCase() : null;
+  const rowsForMes = (mesLabel && MUJERES_DATA[mesLabel]) || [];
+  if (!siteRaw) {
+    return rowsForMes.filter(x => siteKey(x.site) !== 'TOTALCIA')
+      .reduce((acc, v) => ({ f: acc.f + v.f, m: acc.m + v.m, tot: acc.tot + v.tot }), { f: 0, m: 0, tot: 0 });
   }
-  return monthData[site] || { f: 0, m: 0, tot: 0 };
+  const hit = rowsForMes.find(x => siteKey(x.site) === siteKey(siteRaw));
+  return hit ? { f: hit.f, m: hit.m, tot: hit.tot } : { f: 0, m: 0, tot: 0 };
+}
+async function parseMujeresFile(file) {
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: 'array', cellDates: true });
+  const sheetName = wb.SheetNames.find(n => n.trim().toUpperCase() === '% MUJERES') || wb.SheetNames[0];
+  const ws = wb.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
+  const meses = {};
+  let currentMes = null;
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const c0 = (row[0] == null ? '' : String(row[0])).trim();
+    const nominaMatch = c0.match(/^NOMINA\s+(.+)$/i);
+    if (nominaMatch) {
+      const mesKey = nominaMatch[1].trim().toLowerCase();
+      currentMes = MES_NUM_MAP[mesKey] ? mesKey : null;
+      if (currentMes && !meses[currentMes]) meses[currentMes] = [];
+      continue;
+    }
+    if (!currentMes) continue;
+    if (/^etiquetas de fila$/i.test(c0)) continue;
+    if (!c0) { currentMes = null; continue; }
+    const f = typeof row[1] === 'number' ? row[1] : 0;
+    const m = typeof row[2] === 'number' ? row[2] : 0;
+    const tot = typeof row[3] === 'number' ? row[3] : (f + m);
+    meses[currentMes].push({ site: c0, f, m, tot });
+  }
+  if (!Object.keys(meses).length) throw new Error('No se encontraron bloques "NOMINA <mes>" válidos en la hoja.');
+  return meses;
 }
 
-const altasState = { mes: '', sitio: '', genero: '', q: '' };
+const ALTAS_MOTIVO_DEFAULT = 'Adquisición';
+const ACCENT_MAP = { á: 'a', é: 'e', í: 'i', ó: 'o', ú: 'u', Á: 'a', É: 'e', Í: 'i', Ó: 'o', Ú: 'u' };
+function normalizeMotivo(s) {
+  return (s == null ? '' : String(s)).trim().toLowerCase().replace(/[áéíóúÁÉÍÓÚ]/g, ch => ACCENT_MAP[ch]);
+}
+/* Agrupa el texto libre de "Motivo medida" en 4 categorías para el filtro; el texto que se
+   muestra en pantalla siempre es el original de la celda, sin resumir ni reescribir. */
+function motivoBucket(raw) {
+  const n = normalizeMotivo(raw);
+  if (n === 'adquisicion') return 'Adquisición';
+  if (n === 'reemplazo') return 'Reemplazo';
+  if (n === 'proyecto temporal') return 'Proyecto Temporal';
+  return 'Otro (promoción / movimiento interno)';
+}
+
+const altasState = { mes: '', sitio: '', genero: '', motivo: '', vacante: '', q: '' };
 let ALTAS_PERIOD_LABEL = '';
 
-/* reutiliza SITE_MAP y parseFecha ya definidos en la vista de Bajas */
 async function parseAltasFile(file) {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: 'array', cellDates: true });
-  const sheetName = wb.SheetNames.find(n => n.trim().toUpperCase() === 'ALTAS');
-  if (!sheetName) throw new Error('No se encontró una hoja llamada "ALTAS" en el archivo.');
+  const sheetName = wb.SheetNames.find(n => n.trim().toUpperCase() === 'ALTAS') || wb.SheetNames[0];
   const ws = wb.Sheets[sheetName];
   const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
-  if (!rows.length) throw new Error('La hoja ALTAS está vacía.');
-  const header = rows[0].map(h => (h == null ? '' : String(h)).trim());
+  if (!rows.length) throw new Error('La hoja está vacía.');
+  const headerRowIdx = findHeaderRowIndex(rows, 'Empleado (Cod)');
+  if (headerRowIdx === -1) throw new Error('No se encontró la fila de encabezados ("Empleado (Cod)", "Motivo medida"…) en la hoja.');
+  const header = rows[headerRowIdx].map(h => (h == null ? '' : String(h)).trim());
   const col = name => header.findIndex(h => h.toLowerCase() === name.toLowerCase());
   const idx = {
-    cod: col('Empleado (Cod)'), nombre: col('Empleado'), fecha: col('Empleado (Ingreso)'),
-    mes: col('Mes'), div: col('Div Personal'), genero: col('Género'), motivo: col('Motivo medida')
+    cod: col('Empleado (Cod)'), nombre: col('Empleado'), fecha: col('Fecha'),
+    mes: col('Mes'), div: col('Planta'), genero: col('Género'), motivo: col('Motivo medida'),
+    vacante: col('Vacante cubierta (nombre puesto)'), cobertura: col('Tipo de cobertura (interna/externa)'),
   };
   for (const k of ['cod', 'nombre', 'fecha', 'mes', 'div', 'genero']) {
-    if (idx[k] === -1) throw new Error(`Falta la columna requerida "${k}" en la hoja ALTAS.`);
+    if (idx[k] === -1) throw new Error(`Falta la columna requerida "${k}" en la hoja de altas.`);
   }
   const out = [];
   let skippedFecha = 0;
-  for (let r = 1; r < rows.length; r++) {
+  for (let r = headerRowIdx + 1; r < rows.length; r++) {
     const row = rows[r];
     if (!row) continue;
     const cod = row[idx.cod], nombre = row[idx.nombre];
@@ -1268,15 +1586,17 @@ async function parseAltasFile(file) {
     const mesTxt = (row[idx.mes] == null ? '' : String(row[idx.mes])).trim();
     const parsed = parseFecha(row[idx.fecha], mesTxt);
     if (!parsed) { skippedFecha++; continue; }
-    const divRaw = (row[idx.div] == null ? '' : String(row[idx.div])).trim();
-    const site = SITE_MAP[divRaw] || divRaw || 'Sin dato';
+    const site = (row[idx.div] == null ? '' : String(row[idx.div])).trim() || 'Sin dato';
+    const motivoRaw = idx.motivo > -1 && row[idx.motivo] != null ? String(row[idx.motivo]).trim() : 'Sin dato';
+    const field = i => (i === -1 || row[i] == null) ? '' : String(row[i]).trim();
     out.push({
       n: String(nombre),
       g: (row[idx.genero] == null ? '' : String(row[idx.genero])).trim() === 'Masculino' ? 'M' : 'F',
-      mo: idx.motivo > -1 && row[idx.motivo] != null ? String(row[idx.motivo]).trim() : 'Sin dato',
+      mo: motivoRaw,
       s: site,
       f: `${parsed.year}-${String(parsed.month).padStart(2, '0')}-${String(parsed.day).padStart(2, '0')}`,
-      mes: parsed.month
+      mes: parsed.month,
+      vacante: field(idx.vacante), cobertura: field(idx.cobertura),
     });
   }
   return { records: out, skippedFecha };
@@ -1296,6 +1616,9 @@ function altasUpdateMeta() {
   $('altas-h1').textContent = `Altas de personal — ${ALTAS_PERIOD_LABEL}`;
   $('altas-footer-text').textContent = `Elaborado a partir de la planilla de altas (${ALTAS_DATA.length} registro${ALTAS_DATA.length === 1 ? '' : 's'}). Algunos registros corresponden a colaboradores que ya estaban en la empresa y cambiaron de puesto durante 2026; su fecha de ingreso original puede ser de años anteriores.`;
 }
+function altasSearchBlob(r) {
+  return [r.n, r.s, r.mo, r.vacante, r.cobertura, r.g === 'M' ? 'masculino' : 'femenino', r.f].filter(Boolean).join(' ').toLowerCase();
+}
 function altasInitFiltersAndRender() {
   ALTAS_MESES = [...new Set(ALTAS_DATA.map(r => r.mes))].sort((a, b) => a - b);
   $('altas-f-mes').innerHTML = '<option value="">Todos</option>';
@@ -1303,34 +1626,54 @@ function altasInitFiltersAndRender() {
   $('altas-f-sitio').innerHTML = '<option value="">Todos</option>';
   [...new Set(ALTAS_DATA.map(r => r.s))].sort((a, b) => a.localeCompare(b, 'es')).forEach(s =>
     $('altas-f-sitio').insertAdjacentHTML('beforeend', `<option value="${esc(s)}">${esc(s)}</option>`));
-  altasState.mes = ''; altasState.sitio = ''; altasState.genero = ''; altasState.q = '';
-  $('altas-f-mes').value = ''; $('altas-f-sitio').value = ''; $('altas-f-genero').value = ''; $('altas-q').value = '';
+  const motivoBuckets = [...new Set(ALTAS_DATA.map(r => motivoBucket(r.mo)))].sort((a, b) => a === ALTAS_MOTIVO_DEFAULT ? -1 : b === ALTAS_MOTIVO_DEFAULT ? 1 : a.localeCompare(b, 'es'));
+  $('altas-f-motivo').innerHTML = '<option value="">Todos</option>' + motivoBuckets.map(b => `<option value="${esc(b)}">${esc(b)}</option>`).join('');
+  altasState.mes = ''; altasState.sitio = ''; altasState.genero = ''; altasState.vacante = ''; altasState.q = '';
+  altasState.motivo = motivoBuckets.includes(ALTAS_MOTIVO_DEFAULT) ? ALTAS_MOTIVO_DEFAULT : '';
+  $('altas-f-mes').value = ''; $('altas-f-sitio').value = ''; $('altas-f-genero').value = '';
+  $('altas-f-motivo').value = altasState.motivo; $('altas-f-vacante').value = ''; $('altas-q').value = '';
+  setActiveAltasGenderCard('');
   altasRender();
 }
-['altas-f-mes', 'altas-f-sitio', 'altas-f-genero'].forEach(id => $(id).addEventListener('change', () => {
+['altas-f-mes', 'altas-f-sitio', 'altas-f-genero', 'altas-f-motivo', 'altas-f-vacante'].forEach(id => $(id).addEventListener('change', () => {
   altasState.mes = $('altas-f-mes').value; altasState.sitio = $('altas-f-sitio').value; altasState.genero = $('altas-f-genero').value;
+  altasState.motivo = $('altas-f-motivo').value; altasState.vacante = $('altas-f-vacante').value;
+  setActiveAltasGenderCard(altasState.genero);
   altasRender();
 }));
 $('altas-f-clear').addEventListener('click', () => {
-  altasState.mes = altasState.sitio = altasState.genero = '';
-  $('altas-f-mes').value = $('altas-f-sitio').value = $('altas-f-genero').value = '';
+  altasState.mes = altasState.sitio = altasState.genero = altasState.motivo = altasState.vacante = '';
+  $('altas-f-mes').value = $('altas-f-sitio').value = $('altas-f-genero').value = $('altas-f-motivo').value = $('altas-f-vacante').value = '';
+  setActiveAltasGenderCard('');
   altasRender();
 });
-$('altas-q').addEventListener('input', e => { altasState.q = e.target.value.trim().toLowerCase(); altasRenderTable(altasFiltered()); });
+$('altas-q').addEventListener('input', e => { altasState.q = e.target.value.trim().toLowerCase(); altasRender(); });
+function setActiveAltasGenderCard(g) {
+  altasState.genero = g;
+  $('altas-f-genero').value = g;
+  ['altas-card-g-total', 'altas-card-g-m', 'altas-card-g-f'].forEach(id => {
+    const el = $(id);
+    el.classList.toggle('active', el.dataset.g === g);
+  });
+}
+[$('altas-card-g-total'), $('altas-card-g-m'), $('altas-card-g-f')].forEach(el => el.addEventListener('click', () => {
+  setActiveAltasGenderCard(altasState.genero === el.dataset.g ? '' : el.dataset.g);
+  altasRender();
+}));
 
-function altasFiltered() {
+function altasFiltered(opts) {
+  opts = opts || {};
   return ALTAS_DATA.filter(r =>
     (!altasState.mes || r.mes === +altasState.mes) &&
     (!altasState.sitio || r.s === altasState.sitio) &&
-    (!altasState.genero || r.g === altasState.genero));
+    (opts.skipGenero || !altasState.genero || r.g === altasState.genero) &&
+    (!altasState.motivo || motivoBucket(r.mo) === altasState.motivo) &&
+    (!altasState.vacante || (altasState.vacante === 'si' ? !!r.vacante : !r.vacante)) &&
+    (!altasState.q || altasSearchBlob(r).includes(altasState.q)));
 }
-/* filtro solo por mes+sitio (sin género), usado para el gráfico de diversidad y la comparación de género por planta */
-function altasFilteredNoGenero() {
-  return ALTAS_DATA.filter(r =>
-    (!altasState.mes || r.mes === +altasState.mes) &&
-    (!altasState.sitio || r.s === altasState.sitio));
-}
-/* filtro solo por sitio (ignora mes y género) — para reconstruir la serie mensual completa de un sitio */
+/* filtro sin género, usado para el gráfico de diversidad y la comparación de género por planta */
+function altasFilteredNoGenero() { return altasFiltered({ skipGenero: true }); }
+/* filtro solo por sitio (ignora el resto) — para reconstruir la serie mensual completa de un sitio */
 function altasFilteredBySiteOnly(site) {
   return ALTAS_DATA.filter(r => !site || r.s === site);
 }
@@ -1341,19 +1684,25 @@ function bajasFilteredBySiteOnly(site) {
 
 function altasRenderKPIs(rows) {
   const total = rows.length;
-  const f = rows.filter(r => r.g === 'F').length;
-  const m = total - f;
-  $('altas-k-total').textContent = total;
-  $('altas-k-total-sub').textContent = total === ALTAS_DATA.length ? ALTAS_PERIOD_LABEL : `de ${ALTAS_DATA.length} en el período`;
-  $('altas-k-f').textContent = f;
-  $('altas-k-f-sub').textContent = pct(f, total) + ' del total';
-  $('altas-k-m').textContent = m;
-  $('altas-k-m-sub').textContent = pct(m, total) + ' del total';
   const porMes = countBy(rows, r => r.mes);
   let pico = null;
   porMes.forEach((n, mi) => { if (!pico || n > pico[1]) pico = [mi, n]; });
   $('altas-k-pico').textContent = pico ? MES_NOM[pico[0]] : '–';
   $('altas-k-pico-sub').textContent = pico ? `${pico[1]} altas` : '';
+  const cubiertas = rows.filter(r => r.vacante).length;
+  $('altas-k-vac').textContent = cubiertas;
+  $('altas-k-vac-sub').textContent = pct(cubiertas, total) + ' del total filtrado';
+}
+function altasRenderGenderCards(rows) {
+  const total = rows.length;
+  const f = rows.filter(r => r.g === 'F').length;
+  const m = total - f;
+  $('altas-k-total').textContent = total;
+  $('altas-k-total-sub').textContent = total === ALTAS_DATA.length ? ALTAS_PERIOD_LABEL : `de ${ALTAS_DATA.length} en el período`;
+  $('altas-k-f').textContent = f;
+  $('altas-k-f-sub').textContent = pct(f, total) + ' del total filtrado';
+  $('altas-k-m').textContent = m;
+  $('altas-k-m-sub').textContent = pct(m, total) + ' del total filtrado';
 }
 function altasRenderMes(rows) {
   const W = 680, H = 250, mL = 30, mR = 8, mT = 26, mB = 24;
@@ -1423,19 +1772,25 @@ function altasRenderGeneroPorSitio(rows) {
   }).join('');
 }
 function altasDiversidadSerie(site) {
-  /* Serie mensual de % mujeres para un sitio (o compañía completa si site es '' ), usando la
-     dotación real cerrada de cada mes (nómina al 31/1 y pivots reales de nómina feb-jun) — ya no
-     es una estimación por altas menos bajas, es el headcount real de cada cierre mensual. */
-  const meses = ALTAS_MESES.length ? ALTAS_MESES : [1];
+  /* Serie mensual de % mujeres para un sitio (o compañía completa si site es ''), usando la
+     dotación real cerrada de cada mes tal como viene del Excel de % Mujeres — no es una estimación
+     por altas menos bajas, es el headcount real de cada cierre mensual. */
+  const monthKeys = mujeresMonthKeys();
+  const meses = monthKeys.length ? monthKeys.map(k => MES_NUM_MAP[k]) : [1];
   return meses.map(mi => {
-    const d = altasNominaFor(mi, site);
+    const d = mujeresFor(mi, site);
     return { mi, f: d.f, tot: d.tot, pctF: d.tot ? (d.f / d.tot * 100) : null };
   });
 }
 function altasRenderDiversidad() {
   /* Small multiples: un mini-gráfico por planta en vez de todas las líneas superpuestas — mismo dato
-     (base nómina enero + altas acumuladas), mucho más fácil de leer de un vistazo. */
-  const sites = Object.keys(NOMINA_ENERO_MAP).sort((a, b) => NOMINA_ENERO_MAP[b].tot - NOMINA_ENERO_MAP[a].tot);
+     (dotación real por mes desde el Excel de % Mujeres), mucho más fácil de leer de un vistazo. */
+  const sites = mujeresSiteList();
+  if (!sites.length) {
+    $('altas-c-diversidad').innerHTML = '<p style="color:var(--muted); font-size:13px;">Todavía no se cargó el Excel de % Mujeres — usá el botón de arriba.</p>';
+    $('altas-div-legend').innerHTML = '';
+    return;
+  }
   const total = altasDiversidadSerie('');
   const entries = [{ label: 'Total compañía', pts: total, isTotal: true }, ...sites.map(site => ({ label: site, pts: altasDiversidadSerie(site), isTotal: false }))];
 
@@ -1480,21 +1835,23 @@ function altasRenderDiversidad() {
     `<span>Cada mini-gráfico va de 0% a 100%; la línea punteada marca el 50%. Color verde = subió respecto a enero, rojo = bajó.</span>`;
 }
 function altasRenderDiversidadTabla() {
-  const lastMi = ALTAS_MESES.length ? ALTAS_MESES[ALTAS_MESES.length - 1] : 1;
+  const monthKeys = mujeresMonthKeys();
+  const primerMi = monthKeys.length ? MES_NUM_MAP[monthKeys[0]] : 1;
+  const lastMi = monthKeys.length ? MES_NUM_MAP[monthKeys[monthKeys.length - 1]] : 1;
   const hastaMi = altasState.mes ? +altasState.mes : lastMi;
   ['altas-div-mes-lbl', 'altas-div-mes-lbl2', 'altas-div-mes-lbl3', 'altas-div-mes-lbl4'].forEach(id => { $(id).textContent = MES_ABR[hastaMi]; });
-  const sites = Object.keys(NOMINA_ENERO_MAP).sort((a, b) => a.localeCompare(b, 'es'));
+  const sites = mujeresSiteList().slice().sort((a, b) => a.localeCompare(b, 'es'));
   const rowsHtml = sites.map(site => {
-    const base = NOMINA_ENERO_MAP[site];
+    const base = mujeresFor(primerMi, site);
     const pctEne = base.tot ? (base.f / base.tot * 100) : null;
-    const rowsSite = altasFilteredBySiteOnly(site).filter(r => r.mes > 1 && r.mes <= hastaMi);
-    const bajasSite = bajasFilteredBySiteOnly(site).filter(r => r.mes > 1 && r.mes <= hastaMi);
+    const rowsSite = altasFilteredBySiteOnly(site).filter(r => r.mes > primerMi && r.mes <= hastaMi);
+    const bajasSite = bajasFilteredBySiteOnly(site).filter(r => r.mes > primerMi && r.mes <= hastaMi);
     const altasF = rowsSite.filter(r => r.g === 'F').length;
     const altasM = rowsSite.filter(r => r.g === 'M').length;
     const bajasF = bajasSite.filter(r => r.g === 'F').length;
     const bajasM = bajasSite.filter(r => r.g === 'M').length;
-    /* dotación y % actual: nómina real del mes seleccionado (no una estimación por altas-bajas) */
-    const cur = altasNominaFor(hastaMi, site);
+    /* dotación y % actual: dato real del mes seleccionado, no una estimación por altas-bajas */
+    const cur = mujeresFor(hastaMi, site);
     const pctCur = cur.tot ? (cur.f / cur.tot * 100) : null;
     const delta = (pctEne != null && pctCur != null) ? (pctCur - pctEne) : null;
     return `<tr>
@@ -1513,16 +1870,14 @@ function altasRenderDiversidadTabla() {
   $('altas-div-tbody').innerHTML = rowsHtml;
 }
 function altasRenderTable(rows) {
-  const q = altasState.q;
-  const list = rows
-    .filter(r => !q || [r.n, r.s].join(' ').toLowerCase().includes(q))
-    .sort((a, b) => a.f.localeCompare(b.f));
+  const list = rows.slice().sort((a, b) => a.f.localeCompare(b.f));
   $('altas-tbody').innerHTML = list.map(r => {
     const [y, mo, d] = r.f.split('-');
     return `<tr>
       <td>${esc(r.n)}</td><td class="num">${d}/${mo}/${y}</td>
       <td><span class="pill ${r.g === 'F' ? 'I' : 'V'}">${r.g === 'F' ? 'Femenino' : 'Masculino'}</span></td>
-      <td>${esc(r.mo)}</td><td>${esc(r.s)}</td>
+      <td title="${esc(r.mo)}">${esc(r.mo)}</td><td>${esc(r.s)}</td>
+      <td>${r.vacante ? `<span class="pill pos" data-tip="${esc(r.vacante)}${r.cobertura ? ' — ' + esc(r.cobertura) : ''}">Sí</span>` : '<span class="pill S">No</span>'}</td>
     </tr>`;
   }).join('');
   $('altas-tempty').hidden = list.length > 0;
@@ -1531,7 +1886,8 @@ function altasRenderTable(rows) {
 function altasRender() {
   const rows = altasFiltered();
   const rowsNoGenero = altasFilteredNoGenero();
-  $('altas-f-clear').classList.toggle('on', !!(altasState.mes || altasState.sitio || altasState.genero));
+  $('altas-f-clear').classList.toggle('on', !!(altasState.mes || altasState.sitio || altasState.genero || (altasState.motivo && altasState.motivo !== ALTAS_MOTIVO_DEFAULT) || altasState.vacante || altasState.q));
+  altasRenderGenderCards(rowsNoGenero);
   altasRenderKPIs(rows);
   altasRenderMes(rows);
   altasRenderSitio(rows);
@@ -1553,6 +1909,18 @@ async function altasInit() {
       }
     }
   } catch (err) {}
+  try {
+    const stored = await window.storage.get('mujeres-dataset', true);
+    if (stored && stored.value) {
+      const parsed = JSON.parse(stored.value);
+      if (parsed && parsed.meses && Object.keys(parsed.meses).length) {
+        MUJERES_DATA = parsed.meses;
+        const fecha = parsed.uploadedAt ? new Date(parsed.uploadedAt).toLocaleString('es-AR') : '';
+        $('mujeres-upload-status').textContent = `Últimos datos cargados: "${parsed.filename || 'archivo'}"${fecha ? ' · ' + fecha : ''}`;
+        $('mujeres-upload-status').className = 'upload-status ok';
+      }
+    }
+  } catch (err) {}
   altasInitFiltersAndRender();
   altasUpdateMeta();
 }
@@ -1562,39 +1930,233 @@ onChange('altas-file-input', async (e) => {
   const statusEl = $('altas-upload-status');
   statusEl.textContent = 'Procesando archivo…'; statusEl.className = 'upload-status';
   try {
-    const { records, skippedFecha } = await parseAltasFile(file);
-    if (!records.length) throw new Error('No se encontraron registros válidos en la hoja ALTAS.');
+    const { records: newRecords, skippedFecha } = await parseAltasFile(file);
+    if (!newRecords.length) throw new Error('No se encontraron registros válidos en la hoja de altas.');
+    const records = mergeRecordsByMonth(ALTAS_DATA, newRecords, r => r.f.slice(0, 7));
     ALTAS_DATA = records;
     const uploadedAt = new Date().toISOString();
     try { await window.storage.set('altas-dataset', JSON.stringify({ records, uploadedAt, filename: file.name }), true); }
     catch (err) { throw new Error(`El archivo se procesó pero NO se guardó en el servidor (${err.message}). Los demás usuarios no van a ver este cambio: probá de nuevo.`); }
     altasInitFiltersAndRender(); altasUpdateMeta();
-    let msg = `✓ ${records.length} registros cargados desde "${file.name}".`;
+    let msg = `✓ ${newRecords.length} registros cargados desde "${file.name}" (${records.length} en total tras combinar meses).`;
     if (skippedFecha) msg += ` ${skippedFecha} fila(s) con fecha inválida omitida(s).`;
     statusEl.textContent = msg; statusEl.className = 'upload-status ok';
   } catch (err) { statusEl.textContent = '⚠ ' + err.message; statusEl.className = 'upload-status err'; }
   e.target.value = '';
 });
+onChange('mujeres-file-input', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const statusEl = $('mujeres-upload-status');
+  statusEl.textContent = 'Procesando archivo…'; statusEl.className = 'upload-status';
+  try {
+    const newMeses = await parseMujeresFile(file);
+    const meses = Object.assign({}, MUJERES_DATA, newMeses); // los meses nuevos reemplazan, el resto se conserva
+    MUJERES_DATA = meses;
+    const uploadedAt = new Date().toISOString();
+    try { await window.storage.set('mujeres-dataset', JSON.stringify({ meses, uploadedAt, filename: file.name }), true); }
+    catch (err) { throw new Error(`El archivo se procesó pero NO se guardó en el servidor (${err.message}). Los demás usuarios no van a ver este cambio: probá de nuevo.`); }
+    altasRender();
+    const nuevos = Object.keys(newMeses).length;
+    statusEl.textContent = `✓ ${nuevos} mes(es) cargado(s) desde "${file.name}" (${Object.keys(meses).length} en total tras combinar).`;
+    statusEl.className = 'upload-status ok';
+  } catch (err) { statusEl.textContent = '⚠ ' + err.message; statusEl.className = 'upload-status err'; }
+  e.target.value = '';
+});
+
+/* ================================================================ */
+/* VISTA: SUCESIÓN DE POSICIONES (SEMAFORO.xlsx)                    */
+/* Reporte 100% nuevo e independiente: lista posiciones clave por    */
+/* planta con su semáforo de riesgo. No se cruza fila a fila con     */
+/* bajas — en Bajas, el sucesor sale directo de su propia columna    */
+/* "Sucesor" (Si/No/vacío).                                          */
+/* ================================================================ */
+let SUC_DATA = { posiciones: [], personas: [] };
+function semaforoEstadoKey(raw) {
+  const n = normalizeMotivo(raw);
+  if (n.includes('verde')) return 'verde';
+  if (n.includes('amarillo')) return 'amarillo';
+  if (n.includes('rojo')) return 'rojo';
+  return 'sin-dato';
+}
+async function parseSemaforoFile(file) {
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: 'array', cellDates: true });
+  const sheetName = wb.SheetNames.find(n => n.trim().toLowerCase() === 'hoja1') || wb.SheetNames[0];
+  const ws = wb.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
+  if (!rows.length) throw new Error('La hoja está vacía.');
+  const headerRowIdx = findHeaderRowIndex(rows, 'Posición');
+  if (headerRowIdx === -1) throw new Error('No se encontró la fila de encabezados ("Posición", "Estado (Semáforo)"…) en la hoja.');
+  const header = rows[headerRowIdx].map(h => (h == null ? '' : String(h)).trim());
+  const col = (name, from) => {
+    for (let i = (from || 0); i < header.length; i++) if (header[i].toLowerCase() === name.toLowerCase()) return i;
+    return -1;
+  };
+  const idxPos = { posicion: col('Posición'), readyNow: col('Ready Now'), inDev: col('In Development'), inCons: col('In Consideration'), planta: col('Planta'), estado: col('Estado (Semáforo)') };
+  /* la segunda tabla (personas con plan de desarrollo) repite "Posición" más adelante en la misma fila */
+  const idxPer = { nombre: col('Nombre'), posicion: col('Posición', idxPos.estado + 1), site: col('Site'), banda: col('% BANDA'), gap: col('GAP'), acciones: col('Acciones') };
+  for (const k of ['posicion', 'planta', 'estado']) {
+    if (idxPos[k] === -1) throw new Error(`Falta la columna requerida "${k}" en la hoja de sucesión.`);
+  }
+  const field = (row, i) => (i === -1 || row[i] == null) ? '' : String(row[i]).trim();
+  const fieldPct = (row, i) => {
+    if (i === -1 || row[i] == null || row[i] === '') return '';
+    return typeof row[i] === 'number' ? Math.round(row[i] * 100) + '%' : String(row[i]).trim();
+  };
+  const posiciones = [];
+  const personas = [];
+  for (let r = headerRowIdx + 1; r < rows.length; r++) {
+    const row = rows[r];
+    if (!row) continue;
+    const posicion = field(row, idxPos.posicion), planta = field(row, idxPos.planta);
+    if (posicion && planta) {
+      const estadoRaw = field(row, idxPos.estado);
+      posiciones.push({
+        posicion, planta,
+        readyNow: field(row, idxPos.readyNow), inDevelopment: field(row, idxPos.inDev), inConsideration: field(row, idxPos.inCons),
+        estadoRaw, estado: semaforoEstadoKey(estadoRaw),
+      });
+    }
+    if (idxPer.nombre > -1) {
+      const nombre = field(row, idxPer.nombre);
+      if (nombre) {
+        personas.push({
+          nombre, posicion: field(row, idxPer.posicion), site: field(row, idxPer.site),
+          banda: fieldPct(row, idxPer.banda), gap: field(row, idxPer.gap), acciones: field(row, idxPer.acciones),
+        });
+      }
+    }
+  }
+  if (!posiciones.length) throw new Error('No se encontraron posiciones válidas en la hoja.');
+  return { posiciones, personas };
+}
+const sucState = { planta: '', estado: '', q: '' };
+function sucSearchBlob(p) {
+  return [p.posicion, p.planta, p.readyNow, p.inDevelopment, p.inConsideration, p.estadoRaw].filter(Boolean).join(' ').toLowerCase();
+}
+function sucFiltered() {
+  return SUC_DATA.posiciones.filter(p =>
+    (!sucState.planta || p.planta === sucState.planta) &&
+    (!sucState.estado || p.estado === sucState.estado) &&
+    (!sucState.q || sucSearchBlob(p).includes(sucState.q)));
+}
+function sucInitFiltersAndRender() {
+  $('suc-f-planta').innerHTML = '<option value="">Todas</option>' +
+    [...new Set(SUC_DATA.posiciones.map(p => p.planta))].sort((a, b) => a.localeCompare(b, 'es')).map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('');
+  sucState.planta = ''; sucState.estado = ''; sucState.q = '';
+  $('suc-f-planta').value = ''; $('suc-f-estado').value = ''; $('suc-q').value = '';
+  sucRender();
+}
+['suc-f-planta', 'suc-f-estado'].forEach(id => $(id).addEventListener('change', () => {
+  sucState.planta = $('suc-f-planta').value; sucState.estado = $('suc-f-estado').value;
+  sucRender();
+}));
+$('suc-f-clear').addEventListener('click', () => {
+  sucState.planta = sucState.estado = sucState.q = '';
+  $('suc-f-planta').value = $('suc-f-estado').value = ''; $('suc-q').value = '';
+  sucRender();
+});
+$('suc-q').addEventListener('input', e => { sucState.q = e.target.value.trim().toLowerCase(); sucRender(); });
+const SUC_ESTADO_LABEL = { verde: 'Verde', amarillo: 'Amarillo', rojo: 'Rojo', 'sin-dato': 'Sin dato' };
+const SUC_ESTADO_PILL = { verde: 'pos', amarillo: 'S', rojo: 'neg', 'sin-dato': 'S' };
+function sucRenderKPIs(rows) {
+  const total = rows.length;
+  const verde = rows.filter(p => p.estado === 'verde').length;
+  const amarillo = rows.filter(p => p.estado === 'amarillo').length;
+  const rojo = rows.filter(p => p.estado === 'rojo').length;
+  $('suc-k-total').textContent = total;
+  $('suc-k-total-sub').textContent = 'posiciones filtradas';
+  $('suc-k-verde').textContent = verde; $('suc-k-verde-sub').textContent = pct(verde, total) + ' del total';
+  $('suc-k-amarillo').textContent = amarillo; $('suc-k-amarillo-sub').textContent = pct(amarillo, total) + ' del total';
+  $('suc-k-rojo').textContent = rojo; $('suc-k-rojo-sub').textContent = pct(rojo, total) + ' del total';
+}
+function sucRenderTable(rows) {
+  $('suc-tbody').innerHTML = rows.map(p => `<tr>
+    <td>${esc(p.posicion)}</td><td>${esc(p.planta)}</td>
+    <td>${esc(p.readyNow) || '—'}</td><td>${esc(p.inDevelopment) || '—'}</td><td>${esc(p.inConsideration) || '—'}</td>
+    <td><span class="pill ${SUC_ESTADO_PILL[p.estado]}">${SUC_ESTADO_LABEL[p.estado]}</span></td>
+  </tr>`).join('');
+  $('suc-tempty').hidden = rows.length > 0;
+  $('suc-tcount').textContent = `${rows.length} de ${SUC_DATA.posiciones.length} posiciones`;
+}
+function sucRenderPeopleTable() {
+  const list = SUC_DATA.personas;
+  $('suc-people-tbody').innerHTML = list.map(p => `<tr>
+    <td>${esc(p.nombre)}</td><td>${esc(p.posicion) || '—'}</td><td>${esc(p.site) || '—'}</td>
+    <td class="num">${esc(p.banda) || '—'}</td><td title="${esc(p.gap)}">${esc(p.gap) || '—'}</td><td title="${esc(p.acciones)}">${esc(p.acciones) || '—'}</td>
+  </tr>`).join('');
+  $('suc-people-tempty').hidden = list.length > 0;
+}
+function sucUpdateFooter() {
+  $('suc-footer-text').textContent = `Elaborado a partir de la planilla de sucesión (${SUC_DATA.posiciones.length} posiciones${SUC_DATA.personas.length ? `, ${SUC_DATA.personas.length} personas con plan de desarrollo` : ''}).`;
+}
+function sucRender() {
+  const rows = sucFiltered();
+  $('suc-f-clear').classList.toggle('on', !!(sucState.planta || sucState.estado || sucState.q));
+  sucRenderKPIs(rows);
+  sucRenderTable(rows);
+  sucRenderPeopleTable();
+}
+/* Una posición ya cargada (misma planta + mismo nombre de posición) se reemplaza; las que no
+   vienen en el archivo nuevo se conservan; una posición nueva se agrega. */
+function mergeSucesionByKey(oldPos, newPos) {
+  if (!oldPos || !oldPos.length) return newPos;
+  const byKey = new Map(oldPos.map(p => [siteKey(p.planta) + '|' + siteKey(p.posicion), p]));
+  newPos.forEach(np => byKey.set(siteKey(np.planta) + '|' + siteKey(np.posicion), np));
+  return [...byKey.values()];
+}
+async function sucInit() {
+  try {
+    const stored = await window.storage.get('semaforo-dataset', true);
+    if (stored && stored.value) {
+      const parsed = JSON.parse(stored.value);
+      if (parsed && Array.isArray(parsed.posiciones) && parsed.posiciones.length) {
+        SUC_DATA = { posiciones: parsed.posiciones, personas: parsed.personas || [] };
+        const fecha = parsed.uploadedAt ? new Date(parsed.uploadedAt).toLocaleString('es-AR') : '';
+        $('suc-upload-status').textContent = `Últimos datos cargados: "${parsed.filename || 'archivo'}"${fecha ? ' · ' + fecha : ''}`;
+        $('suc-upload-status').className = 'upload-status ok';
+      }
+    }
+  } catch (err) {}
+  sucInitFiltersAndRender();
+  sucUpdateFooter();
+}
+onChange('suc-file-input', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const statusEl = $('suc-upload-status');
+  statusEl.textContent = 'Procesando archivo…'; statusEl.className = 'upload-status';
+  try {
+    const { posiciones: newPos, personas: newPer } = await parseSemaforoFile(file);
+    const posiciones = mergeSucesionByKey(SUC_DATA.posiciones, newPos);
+    const personas = newPer.length ? newPer : SUC_DATA.personas;
+    SUC_DATA = { posiciones, personas };
+    const uploadedAt = new Date().toISOString();
+    try { await window.storage.set('semaforo-dataset', JSON.stringify({ posiciones, personas, uploadedAt, filename: file.name }), true); }
+    catch (err) { throw new Error(`El archivo se procesó pero NO se guardó en el servidor (${err.message}). Los demás usuarios no van a ver este cambio: probá de nuevo.`); }
+    sucInitFiltersAndRender(); sucUpdateFooter();
+    statusEl.textContent = `✓ ${newPos.length} posición(es) cargadas desde "${file.name}" (${posiciones.length} en total).`;
+    statusEl.className = 'upload-status ok';
+  } catch (err) { statusEl.textContent = '⚠ ' + err.message; statusEl.className = 'upload-status err'; }
+  e.target.value = '';
+});
 
 /* ----- tabs ----- */
+const TABS = ['bajas', 'mtp', 'altas', 'sucesion'];
 function showTab(tab) {
-  $('view-bajas').hidden = tab !== 'bajas';
-  $('view-mtp').hidden = tab !== 'mtp';
-  $('view-altas').hidden = tab !== 'altas';
-  $('tab-btn-bajas').classList.toggle('active', tab === 'bajas');
-  $('tab-btn-mtp').classList.toggle('active', tab === 'mtp');
-  $('tab-btn-altas').classList.toggle('active', tab === 'altas');
-  $('tab-btn-bajas').setAttribute('aria-selected', tab === 'bajas');
-  $('tab-btn-mtp').setAttribute('aria-selected', tab === 'mtp');
-  $('tab-btn-altas').setAttribute('aria-selected', tab === 'altas');
+  TABS.forEach(t => {
+    $('view-' + t).hidden = tab !== t;
+    $('tab-btn-' + t).classList.toggle('active', tab === t);
+    $('tab-btn-' + t).setAttribute('aria-selected', tab === t);
+  });
 }
-$('tab-btn-bajas').addEventListener('click', () => showTab('bajas'));
-$('tab-btn-mtp').addEventListener('click', () => showTab('mtp'));
-$('tab-btn-altas').addEventListener('click', () => showTab('altas'));
+TABS.forEach(t => $('tab-btn-' + t).addEventListener('click', () => showTab(t)));
 
 init();
 mtpInit();
 altasInit();
+sucInit();
 </script>
 </body>
 </html>
