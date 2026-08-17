@@ -811,6 +811,7 @@ function siteKey(raw) {
   return (raw == null ? '' : String(raw))
     .toUpperCase()
     .replace(/\bS\.?A\.?$/, '')
+    .replace(/^PTA\.?\s*/, '') // "Pta." es un prefijo genérico que solo aparece en algunos Excel (Altas) y no en otros (FTE) — sacarlo permite matchear "Pta. Capdeville" con "CAPDEVILLE"
     .replace(/[^A-Z0-9]/g, ''); // saca espacios, puntos y acentos (Ñ, Á, ...) — solo para la clave interna
 }
 
@@ -1494,11 +1495,30 @@ function mtpNormalizeRecord(p) {
   return { planta: (p && p.planta) || 'Desconocida', blueprint: null, meses: {} };
 }
 function mtpNormalizeRecords(records) { return (records || []).map(mtpNormalizeRecord); }
+/* Limpia entradas "fantasma" que quedaron guardadas en la base de una época en la que la demo
+   embebida (nombres "Pta. X", ver MTP_DATA_DEFAULT_OLD) se combinó por error con datos reales del
+   Excel. Con el siteKey actual ambas colapsan a la misma clave; acá nos quedamos con la fila real
+   (la que no empieza con "Pta.") y solo tomamos el blueprint de la fantasma si a la real le falta. */
+function mtpDedupeByPlant(records) {
+  const byKey = new Map();
+  (records || []).forEach(p => {
+    const key = siteKey(p.planta);
+    const existing = byKey.get(key);
+    if (!existing) { byKey.set(key, p); return; }
+    const existingEsFantasma = /^pta\.?\s/i.test(existing.planta || '');
+    const incomingEsFantasma = /^pta\.?\s/i.test(p.planta || '');
+    const keep = existingEsFantasma && !incomingEsFantasma ? p : existing;
+    const drop = keep === p ? existing : p;
+    if (keep.blueprint == null && drop.blueprint != null) keep.blueprint = drop.blueprint;
+    byKey.set(key, keep);
+  });
+  return [...byKey.values()];
+}
 /* Los meses que trae el archivo nuevo reemplazan a los que ya había para esa planta; los meses que
    no vienen en el archivo nuevo se conservan. Una planta nueva se agrega completa. */
 function mergeMtpByMonth(oldData, newData) {
   if (!oldData || !oldData.length) return newData;
-  const byPlant = new Map(mtpNormalizeRecords(oldData).map(p => [siteKey(p.planta), p]));
+  const byPlant = new Map(mtpDedupeByPlant(mtpNormalizeRecords(oldData)).map(p => [siteKey(p.planta), p]));
   newData.forEach(np => {
     const key = siteKey(np.planta);
     const existing = byPlant.get(key);
@@ -1517,7 +1537,7 @@ async function mtpInit() {
     if (stored && stored.value) {
       const parsed = JSON.parse(stored.value);
       if (parsed && Array.isArray(parsed.records) && parsed.records.length) {
-        MTP_DATA = mtpNormalizeRecords(parsed.records);
+        MTP_DATA = mtpDedupeByPlant(mtpNormalizeRecords(parsed.records));
         mtpTieneDatosReales = true;
         const fecha = parsed.uploadedAt ? new Date(parsed.uploadedAt).toLocaleString('es-AR') : '';
         $('mtp-upload-status').textContent = `Últimos datos cargados: "${parsed.filename || 'archivo'}"${fecha ? ' · ' + fecha : ''}`;
