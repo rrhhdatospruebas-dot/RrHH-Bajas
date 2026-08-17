@@ -99,6 +99,8 @@
     padding: 7px 12px; cursor: pointer; white-space: nowrap;
   }
   .upload-btn:hover { background: var(--hover-wash); }
+  .upload-btn.danger { color: var(--neg); border-color: color-mix(in srgb, var(--neg) 40%, var(--border)); }
+  .upload-btn.danger:hover { background: color-mix(in srgb, var(--neg) 10%, transparent); }
   .file-input-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
   .upload-status { font-size: 12px; color: var(--muted); }
   .upload-status.ok { color: var(--i); }
@@ -144,6 +146,7 @@
   /* ---------- tarjetas / grilla ---------- */
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   @media (max-width: 780px) { .grid { grid-template-columns: 1fr; } }
+  @media (max-width: 980px) { .grid-3 { grid-template-columns: 1fr !important; } }
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; min-width: 0; }
   .card.full { grid-column: 1 / -1; }
   .card h2 { font-size: 14px; font-weight: 650; margin: 0; }
@@ -254,6 +257,7 @@
       <% if (esAdmin) { %>
       <label class="upload-btn" for="file-input">📤 Cargar nuevo Excel (.xlsx)</label>
       <input type="file" class="file-input-hidden" id="file-input" accept=".xlsx,.xls" />
+      <button class="upload-btn danger" type="button" id="clear-btn">🗑 Vaciar datos</button>
       <% } %>
       <span class="upload-status" id="upload-status">Datos iniciales cargados.</span>
     </div>
@@ -358,6 +362,7 @@
       <% if (esAdmin) { %>
       <label class="upload-btn" for="mtp-file-input">📤 Cargar nuevo Excel (.xlsx)</label>
       <input type="file" class="file-input-hidden" id="mtp-file-input" accept=".xlsx,.xls" />
+      <button class="upload-btn danger" type="button" id="mtp-clear-btn">🗑 Vaciar datos</button>
       <% } %>
       <span class="upload-status" id="mtp-upload-status">Datos iniciales cargados.</span>
     </div>
@@ -399,14 +404,23 @@
         <div class="chart-mes" id="mtp-c-trend"></div>
       </div>
 
-      <div class="card">
-        <div class="card-head"><div><h2>Todas las plantas</h2><div class="hint">Real − MTP del mes seleccionado</div></div></div>
-        <div class="hbars" id="mtp-c-estandar"></div>
-      </div>
+      <div class="card full">
+        <div class="grid-3" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+          <div>
+            <div class="card-head"><div><h2>Todas las plantas</h2><div class="hint">Real − MTP del mes seleccionado</div></div></div>
+            <div class="hbars" id="mtp-c-estandar"></div>
+          </div>
 
-      <div class="card">
-        <div class="card-head"><div><h2>Distribución de headcount</h2><div class="hint">Todas las plantas, real del mes seleccionado, de mayor a menor</div></div></div>
-        <div class="hbars" id="mtp-c-dist"></div>
+          <div>
+            <div class="card-head"><div><h2>Real vs. línea base</h2><div class="hint">Real − dotación al 31/12/25 ("enero") del mes seleccionado</div></div></div>
+            <div class="hbars" id="mtp-c-vsbase"></div>
+          </div>
+
+          <div>
+            <div class="card-head"><div><h2>Distribución de headcount</h2><div class="hint">Todas las plantas, real del mes seleccionado, de mayor a menor</div></div></div>
+            <div class="hbars" id="mtp-c-dist"></div>
+          </div>
+        </div>
       </div>
 
       <div class="card full">
@@ -473,6 +487,7 @@
       <% if (esAdmin) { %>
       <label class="upload-btn" for="altas-file-input">📤 Cargar Excel de altas (.xlsx)</label>
       <input type="file" class="file-input-hidden" id="altas-file-input" accept=".xlsx,.xls" />
+      <button class="upload-btn danger" type="button" id="altas-clear-btn">🗑 Vaciar datos</button>
       <% } %>
       <span class="upload-status" id="altas-upload-status">Datos iniciales cargados.</span>
     </div>
@@ -480,6 +495,7 @@
       <% if (esAdmin) { %>
       <label class="upload-btn" for="mujeres-file-input">📤 Cargar Excel de % Mujeres (.xlsx)</label>
       <input type="file" class="file-input-hidden" id="mujeres-file-input" accept=".xlsx,.xls" />
+      <button class="upload-btn danger" type="button" id="mujeres-clear-btn">🗑 Vaciar datos</button>
       <% } %>
       <span class="upload-status" id="mujeres-upload-status">Datos iniciales cargados.</span>
     </div>
@@ -495,13 +511,6 @@
         </select>
       </label>
       <label>Motivo <select id="altas-f-motivo"></select></label>
-      <label>Vacante
-        <select id="altas-f-vacante">
-          <option value="">Todas</option>
-          <option value="si">Cubiertas</option>
-          <option value="no">No cubiertas</option>
-        </select>
-      </label>
       <button id="altas-f-clear" type="button">Limpiar filtros</button>
     </div>
 
@@ -592,6 +601,7 @@
       <% if (esAdmin) { %>
       <label class="upload-btn" for="suc-file-input">📤 Cargar Excel de sucesión (.xlsx)</label>
       <input type="file" class="file-input-hidden" id="suc-file-input" accept=".xlsx,.xls" />
+      <button class="upload-btn danger" type="button" id="suc-clear-btn">🗑 Vaciar datos</button>
       <% } %>
       <span class="upload-status" id="suc-upload-status">Sin datos cargados todavía.</span>
     </div>
@@ -673,6 +683,10 @@ window.storage = {
     });
     if (!r.ok) throw new Error('el servidor respondió ' + r.status);
   },
+  async remove(clave) {
+    const r = await fetch('/api/datos/' + encodeURIComponent(clave), { method: 'DELETE' });
+    if (!r.ok) throw new Error('el servidor respondió ' + r.status);
+  },
 };
 </script>
 <script>
@@ -682,6 +696,8 @@ window.storage = {
 const $ = id => document.getElementById(id);
 /* los inputs de carga solo existen para administradores */
 const onChange = (id, fn) => { const el = $(id); if (el) el.addEventListener('change', fn); };
+/* los botones "Vaciar datos" solo existen para administradores */
+const onClick = (id, fn) => { const el = $(id); if (el) el.addEventListener('click', fn); };
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 const pct = (n, d) => d ? Math.round(n / d * 100) + '%' : '–';
 
@@ -696,6 +712,21 @@ function mergeRecordsByMonth(oldRecords, newRecords, monthKeyFn) {
   const newMonths = new Set(newRecords.map(monthKeyFn));
   const kept = oldRecords.filter(r => !newMonths.has(monthKeyFn(r)));
   return kept.concat(newRecords);
+}
+
+/* Botón "Vaciar datos" de cada pestaña: borra el dataset guardado en el servidor (para todos los
+   usuarios) y vuelve a mostrar la información inicial embebida. Útil para limpiar un dataset que
+   quedó con datos viejos/mezclados de antes de un cambio de formato del Excel. */
+async function borrarDataset(clave, statusElId, resetFn) {
+  if (!confirm('¿Vaciar este dataset? Se borra para todos los usuarios y se vuelve a mostrar la información inicial.')) return;
+  const statusEl = $(statusElId);
+  statusEl.textContent = 'Vaciando…'; statusEl.className = 'upload-status';
+  try {
+    await window.storage.remove(clave);
+    resetFn();
+    statusEl.textContent = 'Datos vaciados — mostrando información inicial.';
+    statusEl.className = 'upload-status ok';
+  } catch (err) { statusEl.textContent = '⚠ ' + err.message; statusEl.className = 'upload-status err'; }
 }
 
 const tip = $('tip');
@@ -1156,6 +1187,7 @@ onChange('file-input', async (e) => {
   } catch (err) { statusEl.textContent = '⚠ ' + err.message; statusEl.className = 'upload-status err'; }
   e.target.value = '';
 });
+onClick('clear-btn', () => borrarDataset('bajas-dataset', 'upload-status', () => { DATA = DATA_DEFAULT.slice(); initFiltersAndRender(); updateMeta(); }));
 
 /* ================================================================ */
 /* VISTA: COMPARACIÓN HEADCOUNT VS MTP                               */
@@ -1209,17 +1241,18 @@ function mtpRenderKPIs() {
   $('mtp-k-pct-sub').textContent = 'Real / MTP — todas las plantas';
 }
 function mtpRenderCrecimiento() {
-  const meses = mtpMesesList();
-  const primerMes = meses.includes('enero') ? 'enero' : meses[0];
   const actualMes = mtpState.mes;
   const dotActual = mtpTotalsFor(actualMes).real;
-  const dotEnero = primerMes ? mtpTotalsFor(primerMes).real : 0;
+  /* "Enero" acá es la línea base al 31/12/25 (columna "Headcount al 31/12/25" del Excel, repetida
+     igual en todos los bloques de mes) — NO la columna "headcount enero", que es un número distinto.
+     Ver contexto/aclarado.text. */
+  const dotEnero = mtpTotalsFor(actualMes).baseline;
   const diff = dotActual - dotEnero;
   const variacion = dotEnero ? (diff / dotEnero * 100) : 0;
   $('mtp-k-actual').textContent = dotActual;
   $('mtp-k-actual-sub').textContent = mesLabel(actualMes) + ' 2026';
   $('mtp-k-enero').textContent = dotEnero;
-  $('mtp-k-enero-sub').textContent = mesLabel(primerMes) + ' 2026';
+  $('mtp-k-enero-sub').textContent = 'Línea base 31/12/25 (todas las plantas)';
   const diffEl = $('mtp-k-diff');
   diffEl.textContent = (diff > 0 ? '+' : '') + diff;
   diffEl.className = 'val ' + (diff > 0 ? 'pos' : diff < 0 ? 'neg' : 'neutral');
@@ -1327,6 +1360,18 @@ function mtpRenderEstandar() {
   }).sort((a, b) => a.n - b.n);
   renderHBars($('mtp-c-estandar'), items);
 }
+function mtpRenderVsBase() {
+  /* Igual que "Todas las plantas" pero comparando contra la línea base 31/12/25 ("enero") en vez
+     del MTP — con los colores invertidos a pedido: creció respecto a la línea base = rojo,
+     achicó = verde (ver mensaje del usuario en el chat, no en contexto/). */
+  const mesKey = mtpState.mes;
+  const items = MTP_DATA.map(p => {
+    const e = mtpEntry(p, mesKey);
+    const gap = (e.real || 0) - (e.baseline || 0);
+    return { label: p.planta, n: gap, tip: `<b>${esc(p.planta)}</b><br>Línea base 31/12/25: <b>${e.baseline || 0}</b> · Real: <b>${e.real || 0}</b> · Dif: <b>${gap > 0 ? '+' : ''}${gap}</b>`, color: gap >= 0 ? 'var(--neg)' : 'var(--i)' };
+  }).sort((a, b) => a.n - b.n);
+  renderHBars($('mtp-c-vsbase'), items);
+}
 function mtpRenderDist() {
   const mesKey = mtpState.mes;
   const items = MTP_DATA.map(p => ({ label: p.planta, n: mtpEntry(p, mesKey).real || 0, total: 0, color: 'var(--v)' }))
@@ -1373,6 +1418,7 @@ function mtpRender() {
   mtpRenderBlueprint();
   mtpRenderBlueprintTable();
   mtpRenderEstandar();
+  mtpRenderVsBase();
   mtpRenderDist();
   mtpRenderTable();
 }
@@ -1489,6 +1535,7 @@ onChange('mtp-file-input', async (e) => {
   } catch (err) { statusEl.textContent = '⚠ ' + err.message; statusEl.className = 'upload-status err'; }
   e.target.value = '';
 });
+onClick('mtp-clear-btn', () => borrarDataset('mtp-dataset', 'mtp-upload-status', () => { MTP_DATA = mtpDefaultToNested(MTP_DATA_DEFAULT_OLD); mtpInitFiltersAndRender(); }));
 
 /* ================================================================ */
 /* VISTA: ALTAS DE PERSONAL                                          */
@@ -1571,7 +1618,7 @@ function motivoBucket(raw) {
   return 'Otro (promoción / movimiento interno)';
 }
 
-const altasState = { mes: '', sitio: '', genero: '', motivo: '', vacante: '', q: '' };
+const altasState = { mes: '', sitio: '', genero: '', motivo: '', q: '' };
 let ALTAS_PERIOD_LABEL = '';
 
 async function parseAltasFile(file) {
@@ -1645,22 +1692,22 @@ function altasInitFiltersAndRender() {
     $('altas-f-sitio').insertAdjacentHTML('beforeend', `<option value="${esc(s)}">${esc(s)}</option>`));
   const motivoBuckets = [...new Set(ALTAS_DATA.map(r => motivoBucket(r.mo)))].sort((a, b) => a === ALTAS_MOTIVO_DEFAULT ? -1 : b === ALTAS_MOTIVO_DEFAULT ? 1 : a.localeCompare(b, 'es'));
   $('altas-f-motivo').innerHTML = '<option value="">Todos</option>' + motivoBuckets.map(b => `<option value="${esc(b)}">${esc(b)}</option>`).join('');
-  altasState.mes = ''; altasState.sitio = ''; altasState.genero = ''; altasState.vacante = ''; altasState.q = '';
+  altasState.mes = ''; altasState.sitio = ''; altasState.genero = ''; altasState.q = '';
   altasState.motivo = motivoBuckets.includes(ALTAS_MOTIVO_DEFAULT) ? ALTAS_MOTIVO_DEFAULT : '';
   $('altas-f-mes').value = ''; $('altas-f-sitio').value = ''; $('altas-f-genero').value = '';
-  $('altas-f-motivo').value = altasState.motivo; $('altas-f-vacante').value = ''; $('altas-q').value = '';
+  $('altas-f-motivo').value = altasState.motivo; $('altas-q').value = '';
   setActiveAltasGenderCard('');
   altasRender();
 }
-['altas-f-mes', 'altas-f-sitio', 'altas-f-genero', 'altas-f-motivo', 'altas-f-vacante'].forEach(id => $(id).addEventListener('change', () => {
+['altas-f-mes', 'altas-f-sitio', 'altas-f-genero', 'altas-f-motivo'].forEach(id => $(id).addEventListener('change', () => {
   altasState.mes = $('altas-f-mes').value; altasState.sitio = $('altas-f-sitio').value; altasState.genero = $('altas-f-genero').value;
-  altasState.motivo = $('altas-f-motivo').value; altasState.vacante = $('altas-f-vacante').value;
+  altasState.motivo = $('altas-f-motivo').value;
   setActiveAltasGenderCard(altasState.genero);
   altasRender();
 }));
 $('altas-f-clear').addEventListener('click', () => {
-  altasState.mes = altasState.sitio = altasState.genero = altasState.motivo = altasState.vacante = '';
-  $('altas-f-mes').value = $('altas-f-sitio').value = $('altas-f-genero').value = $('altas-f-motivo').value = $('altas-f-vacante').value = '';
+  altasState.mes = altasState.sitio = altasState.genero = altasState.motivo = '';
+  $('altas-f-mes').value = $('altas-f-sitio').value = $('altas-f-genero').value = $('altas-f-motivo').value = '';
   setActiveAltasGenderCard('');
   altasRender();
 });
@@ -1685,7 +1732,6 @@ function altasFiltered(opts) {
     (!altasState.sitio || r.s === altasState.sitio) &&
     (opts.skipGenero || !altasState.genero || r.g === altasState.genero) &&
     (!altasState.motivo || motivoBucket(r.mo) === altasState.motivo) &&
-    (!altasState.vacante || (altasState.vacante === 'si' ? !!r.vacante : !r.vacante)) &&
     (!altasState.q || altasSearchBlob(r).includes(altasState.q)));
 }
 /* filtro sin género, usado para el gráfico de diversidad y la comparación de género por planta */
@@ -1903,7 +1949,7 @@ function altasRenderTable(rows) {
 function altasRender() {
   const rows = altasFiltered();
   const rowsNoGenero = altasFilteredNoGenero();
-  $('altas-f-clear').classList.toggle('on', !!(altasState.mes || altasState.sitio || altasState.genero || (altasState.motivo && altasState.motivo !== ALTAS_MOTIVO_DEFAULT) || altasState.vacante || altasState.q));
+  $('altas-f-clear').classList.toggle('on', !!(altasState.mes || altasState.sitio || altasState.genero || (altasState.motivo && altasState.motivo !== ALTAS_MOTIVO_DEFAULT) || altasState.q));
   altasRenderGenderCards(rowsNoGenero);
   altasRenderKPIs(rows);
   altasRenderMes(rows);
@@ -1961,6 +2007,7 @@ onChange('altas-file-input', async (e) => {
   } catch (err) { statusEl.textContent = '⚠ ' + err.message; statusEl.className = 'upload-status err'; }
   e.target.value = '';
 });
+onClick('altas-clear-btn', () => borrarDataset('altas-dataset', 'altas-upload-status', () => { ALTAS_DATA = ALTAS_DATA_DEFAULT.slice(); altasInitFiltersAndRender(); altasUpdateMeta(); }));
 onChange('mujeres-file-input', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -1980,6 +2027,7 @@ onChange('mujeres-file-input', async (e) => {
   } catch (err) { statusEl.textContent = '⚠ ' + err.message; statusEl.className = 'upload-status err'; }
   e.target.value = '';
 });
+onClick('mujeres-clear-btn', () => borrarDataset('mujeres-dataset', 'mujeres-upload-status', () => { MUJERES_DATA = {}; altasRender(); }));
 
 /* ================================================================ */
 /* VISTA: SUCESIÓN DE POSICIONES (SEMAFORO.xlsx)                    */
@@ -2158,6 +2206,7 @@ onChange('suc-file-input', async (e) => {
   } catch (err) { statusEl.textContent = '⚠ ' + err.message; statusEl.className = 'upload-status err'; }
   e.target.value = '';
 });
+onClick('suc-clear-btn', () => borrarDataset('semaforo-dataset', 'suc-upload-status', () => { SUC_DATA = { posiciones: [], personas: [] }; sucInitFiltersAndRender(); sucUpdateFooter(); }));
 
 /* ----- tabs ----- */
 const TABS = ['bajas', 'mtp', 'altas', 'sucesion'];
