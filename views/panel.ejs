@@ -1424,15 +1424,32 @@ async function mtpParseExcelFile(file) {
   if (!out.length) throw new Error('No se encontraron filas de plantas válidas en la hoja.');
   return out;
 }
+/* Convierte a la forma nueva ({planta, blueprint, meses:{mesKey:{...}}}) cualquier registro que
+   haya quedado guardado en la base con la forma vieja (array real/mtp de 6 posiciones fijas, de
+   antes de que el panel soportara meses dinámicos vía FTE.xlsx). Sin esto, un dataset viejo ya
+   guardado en Neon rompe el merge (Object.assign sobre un .meses inexistente). */
+function mtpNormalizeRecord(p) {
+  if (p && p.meses && typeof p.meses === 'object' && !Array.isArray(p.meses)) return p;
+  if (p && Array.isArray(p.real)) {
+    const meses = {};
+    MTP_MESES_FIJOS_DEFAULT.forEach((mesKey, i) => {
+      meses[mesKey] = { baseline: p.baseline || 0, real: p.real[i] || 0, mtp: (p.mtp && p.mtp[i]) || 0 };
+    });
+    return { planta: p.planta, blueprint: p.blueprint != null ? p.blueprint : null, meses };
+  }
+  return { planta: (p && p.planta) || 'Desconocida', blueprint: null, meses: {} };
+}
+function mtpNormalizeRecords(records) { return (records || []).map(mtpNormalizeRecord); }
 /* Los meses que trae el archivo nuevo reemplazan a los que ya había para esa planta; los meses que
    no vienen en el archivo nuevo se conservan. Una planta nueva se agrega completa. */
 function mergeMtpByMonth(oldData, newData) {
   if (!oldData || !oldData.length) return newData;
-  const byPlant = new Map(oldData.map(p => [siteKey(p.planta), p]));
+  const byPlant = new Map(mtpNormalizeRecords(oldData).map(p => [siteKey(p.planta), p]));
   newData.forEach(np => {
     const key = siteKey(np.planta);
     const existing = byPlant.get(key);
     if (!existing) { byPlant.set(key, np); return; }
+    existing.meses = existing.meses || {};
     Object.assign(existing.meses, np.meses);
     if (np.blueprint != null) existing.blueprint = np.blueprint;
     existing.planta = np.planta;
@@ -1445,7 +1462,7 @@ async function mtpInit() {
     if (stored && stored.value) {
       const parsed = JSON.parse(stored.value);
       if (parsed && Array.isArray(parsed.records) && parsed.records.length) {
-        MTP_DATA = parsed.records;
+        MTP_DATA = mtpNormalizeRecords(parsed.records);
         const fecha = parsed.uploadedAt ? new Date(parsed.uploadedAt).toLocaleString('es-AR') : '';
         $('mtp-upload-status').textContent = `Últimos datos cargados: "${parsed.filename || 'archivo'}"${fecha ? ' · ' + fecha : ''}`;
         $('mtp-upload-status').className = 'upload-status ok';
