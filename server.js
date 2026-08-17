@@ -117,6 +117,12 @@ app.put('/api/datos/:clave', requiereAdmin, claveValida, async (req, res) => {
   res.json({ ok: true });
 });
 
+// Solo administradores pueden vaciar un dataset (vuelve a mostrar los datos iniciales embebidos)
+app.delete('/api/datos/:clave', requiereAdmin, claveValida, async (req, res) => {
+  await db.eliminarDataset(req.params.clave);
+  res.json({ ok: true });
+});
+
 /* ---------- administración ---------- */
 
 // Link público a mostrar en /admin: primero PUBLIC_URL del .env, después el
