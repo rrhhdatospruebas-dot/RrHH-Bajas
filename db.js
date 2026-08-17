@@ -86,6 +86,10 @@ async function setDataset(clave, valor) {
   );
 }
 
+async function eliminarDataset(clave) {
+  await pool.query('DELETE FROM datasets WHERE clave = $1', [clave]);
+}
+
 async function buscarUsuario(usuario) {
   const { rows } = await pool.query('SELECT * FROM usuarios WHERE usuario = $1', [usuario]);
   return rows[0] || null;
@@ -123,6 +127,7 @@ module.exports = {
   setConfig,
   getDataset,
   setDataset,
+  eliminarDataset,
   buscarUsuario,
   listarUsuarios,
   crearUsuario,
